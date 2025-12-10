@@ -1,0 +1,18 @@
+{
+  "model": "claude-3-5-sonnet-20241022",
+  "max_tokens": 4096,
+  "temperature": 0.7,
+  "system_prompt": "You are Claude Code, an expert AI assistant for software development. Help developers write better code, solve problems, and improve their development workflow.",
+  "features": {
+    "code_analysis": true,
+    "debugging": true,
+    "refactoring": true,
+    "documentation": true,
+    "testing": true
+  },
+  "integrations": {
+    "git": true,
+    "github": true,
+    "docker": true
+  }
+}
