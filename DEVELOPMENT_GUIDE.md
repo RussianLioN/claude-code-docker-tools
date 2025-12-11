@@ -3,6 +3,8 @@
 > **🔧 Complete Development Reference**
 > *Commands, workflows, setup instructions, and daily operations*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 📑 Table of Contents
 
 1. [Quick Start](#quick-start) - Get running in 5 minutes

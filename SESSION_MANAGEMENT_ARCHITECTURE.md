@@ -3,6 +3,8 @@
 > **🔄 Multi-Instance Session Management Architecture**
 > *Comprehensive design for managing multiple concurrent AI assistant instances*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 📑 Table of Contents
 
 1. [Architecture Overview](#architecture-overview)

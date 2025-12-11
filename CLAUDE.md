@@ -3,311 +3,104 @@
 > **🤖 Central AI Assistant Guide for Dual AI Environment**
 > *Guidance for Claude Code (claude.ai/code) working in this repository*
 
-## 📑 Table of Contents
+---
 
-1. [⚡ Quick Start](#-quick-start) - Essential commands
-2. [🌐 Language Policies](#-language-policies) - Communication rules
-3. [🏗️ Project Overview](#️-project-overview) - Architecture summary
-4. [🔧 Development Commands](#-development-commands) - Build & usage
-5. [⚙️ Configuration Architecture](#️-configuration-architecture) - State management
-6. [🔒 Security Model](#-security-model) - Security principles
-7. [🤖 AI Mode Differences](#-ai-mode-differences) - Mode comparison
-8. [💼 Common Workflows](#-common-workflows) - Development patterns
-9. [🐛 Troubleshooting](#-troubleshooting) - Issue resolution
-10. [📦 Container Internals](#-container-internals) - Technical details
-11. [📚 Required Reading](#-required-reading) - Critical documents
+## 🧠 MULTI-EXPERT ACTIVATION MATRIX
+
+**🚨 IMMEDIATE ACTIVATION REQUIRED**: You are operating as a **MULTI-DOMAIN EXPERT SYSTEM** with the following activated personas:
+
+### 🎯 Core Expertise Activation
+
+| Domain | Expertise Level | Activation Trigger | Key Capabilities |
+|--------|----------------|-------------------|------------------|
+| **Prompt Engineering** | LLM Master | Always Active | • Optimize prompts for token efficiency<br>• Structure complex multi-step instructions<br>• Design chain-of-thought workflows<br>• Create reusable prompt templates |
+| **AI IDE Specialist** | Claude/Gemini Expert | Always Active | • Maximize AI IDE capabilities<br>• Optimize context window usage<br>• Design effective AI workflows<br>• Leverage AI-specific features |
+| **Docker Optimization** | Container Guru | On container tasks | • Multi-stage build optimization<br>• Layer caching strategies<br>• Resource tuning & limits<br>• Security hardening |
+| **DevOps/GitOps** | Infrastructure Expert | On deployment/CI | • GitOps workflow design<br>• CI/CD pipeline optimization<br>• Infrastructure as Code patterns<br>• Automated recovery strategies |
+| **LLM Instruction Design** | System Architect | Always Active | • Create effective instruction hierarchies<br>• Design AI documentation systems<br>• Optimize for AI consumption<br>• Maintain consistency across docs |
+
+### 🔄 Cross-Domain Synergy Protocols
+
+**When working on ANY task in this repository:**
+
+1. **Always consider prompt optimization** - How can this be more efficiently expressed to LLMs?
+2. **Leverage AI IDE patterns** - What Claude/Gemini-specific features apply?
+3. **Apply container thinking** - How does this affect Docker/build/deployment?
+4. **Think GitOps-first** - Can this be automated/ version-controlled?
+5. **Design for LLM consumption** - Is this structured for AI understanding?
+
+### ⚡ Immediate Action Checklist
+
+Before responding to ANY request:
+- [ ] Identify primary domain(s)
+- [ ] Activate relevant persona(s)
+- [ ] Apply domain-specific best practices
+- [ ] Consider cross-domain implications
+- [ ] Optimize for AI consumption
+- [ ] Document patterns for reuse
 
 ---
 
 ## ⚡ Quick Start
 
-**🔥 Most Used Commands (Learn these first)**:
+**🔥 Essential Commands**:
 
 ```bash
-# Daily AI work
+# AI assistants
 gemini                    # Start Gemini AI
 claude                    # Start Claude AI
-aic                       # AI Commit (Gemini style)
-cic                       # AI Commit (Claude style)
+ai-mode <gemini|claude>   # Switch AI mode
+
+# AI-powered commits
+aic                       # Gemini AI Commit (DevOps style)
+cic                       # Claude AI Commit (SE style)
 
 # System operations
-./install.sh             # Initial setup
-ai-mode <gemini|claude>  # Switch AI mode
-gexec <command>          # Run in container
+./install.sh              # Initial setup
+gexec <command>           # Execute in container
 ```
 
 ---
 
 ## 🌐 Language Policies
 
-**🚨 CRITICAL: All interactions must follow Russian language guidelines**
+**🚨 CRITICAL**: All interactions must follow Russian language guidelines
 
-| Context | Language Required | Notes |
-|---------|------------------|-------|
-| **User Communication** | Russian only | All responses to user |
-| **Code Comments** | Russian only | Inline documentation |
-| **File Creation** | Russian only | Documentation, texts |
-| **Internal Processing** | English preferred | AI internal thoughts |
-| **Final Results** | Russian only | Output to user |
+| Context | Language Required |
+|---------|------------------|
+| **User Communication** | Russian only |
+| **Code Comments** | Russian only |
+| **File Creation** | Russian only |
+| **Internal Processing** | English preferred |
+| **Final Results** | Russian only |
 
 ---
 
-## 🏗️ Project Overview
+## 📚 Knowledge Hub
 
-This is a **Dual AI Assistant Environment** that provides unified Docker-based access to both Google Gemini CLI and Anthropic Claude Code CLI. The project is designed for macOS developers to manage CLI AI tools without dependency conflicts.
+**🔗 Navigate to specialized documentation**:
 
-### 🏛️ Core Architecture
+### 📖 Core Documentation
+- **[PROJECT_ARCHITECTURE.md](./PROJECT_ARCHITECTURE.md)** - System architecture and technical design
+- **[DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md)** - Commands, workflows, setup instructions
+- **[AI_SYSTEM_INSTRUCTIONS.md](./AI_SYSTEM_INSTRUCTIONS.md)** - Critical testing principles (MUST READ)
 
-#### Main Components
+### 🔧 Operations & Security
+- **[GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md)** - Git operations, handoff procedures
+- **[SECURITY_GUIDE.md](./SECURITY_GUIDE.md)** - Security model and best practices
+- **[CONFIGURATION_REFERENCE.md](./CONFIGURATION_REFERENCE.md)** - All settings and customization
 
-| Component | Purpose | Key Features |
-|-----------|---------|--------------|
-| **ai-assistant.zsh** | Central wrapper script | • `gemini()` - Gemini CLI launcher<br>• `claude()` - Claude CLI launcher<br>• `aic()/cic()` - AI commits<br>• `gexec()` - Container commands<br>• `ai-mode()` - Mode switcher |
-| **Dockerfile** | Container definition | • Base: `node:22-alpine`<br>• Dual AI tools installed<br>• System utilities included |
-| **entrypoint.sh** | Runtime router | • Detects `AI_MODE`<br>• Routes to correct CLI |
-
-#### 🔄 Architecture Flow
-
-```
-macOS Host
-    ↓
-ai-assistant.zsh (wrapper)
-    ↓
-Docker Container
-    ↓
-entrypoint.sh (router)
-    ↓
-[ Gemini CLI | Claude CLI ]
-```
-
-## 🔧 Development Commands
-
-### 📦 Build and Install
-**⚙️ Setup Phase** (Run once):
-
-```bash
-# Build Docker image manually
-docker build -t claude-code-tools .
-
-# OR use automated installer (recommended)
-./install.sh && source ~/.zshrc
-```
-
-### 🚀 Daily Usage Commands
-**🔄 AI Assistant Operations**:
-
-| Command | Function | When to Use |
-|---------|----------|-------------|
-| `gemini` | Start Gemini AI | DevOps tasks, automation |
-| `claude` | Start Claude AI | Code review, debugging |
-| `ai-mode gemini` | Switch to Gemini | Need DevOps perspective |
-| `ai-mode claude` | Switch to Claude | Need code analysis |
-
-**🤖 AI-Powered Commits**:
-
-| Command | Style | Best For |
-|---------|-------|----------|
-| `aic` | DevOps/semantic | Infrastructure changes |
-| `cic` | Software Engineer | Code improvements |
-
-**🛠️ System Operations**:
-
-```bash
-gexec <command>          # Execute in container environment
-gexec npm install        # Example: install npm packages
-gexec python script.py   # Example: run Python script
-```
-
-### 🧪 Testing and CI
-**✅ Quality Assurance**:
-
-```bash
-# CI/CD operations
-gh workflow run "CI/CD Pipeline"    # Run full pipeline
-
-# Local validation
-bash -n install.sh                  # Syntax check
-zsh -n ai-assistant.zsh             # Syntax check
-docker build -t test .              # Test build
-```
-
-## ⚙️ Configuration Architecture
-
-### 🔄 State Synchronization Pattern
-**Pattern**: Sync In → Runtime → Sync Out
-
-The project handles VirtioFS limitations through state synchronization:
-
-1. **Sync In**: Copy from `~/.docker-ai-config/` → project `.ai-state/`
-2. **Runtime**: Docker mounts `.ai-state/` with configurations
-3. **Sync Out**: Save updated configs back to global location
-
-### 📁 Global Configuration (`~/.docker-ai-config/`)
-
-| File | Purpose | Sensitive? |
-|------|---------|------------|
-| `env` | API keys & environment variables | 🔒 YES |
-| `settings.json` | Gemini configuration | No |
-| `claude_config.json` | Claude configuration | 🔒 May contain API keys |
-| `google_accounts.json` | Gemini OAuth tokens | 🔒 YES |
-| `gh_config/` | GitHub CLI configuration | 🔒 YES |
-
-### 📂 Project-Specific State (`<project>/.ai-state/`)
-
-| File | Purpose | Auto-generated |
-|------|---------|---------------|
-| `ssh_config_clean` | Sanitized SSH config | ✅ |
-| `google_accounts.json` | Project Gemini auth | ✅ |
-| `settings.json` | Project Gemini settings | ✅ |
-
-### 🛡️ Security Note
-The `.ai-state/` directory is **automatically added to `.gitignore`** to prevent committing sensitive data.
-
-## 🔒 Security Model
-
-### 🛡️ Zero Trust Approach
-
-**🔐 Security Principles**:
-- ✅ Secrets never leave host disk
-- ✅ API keys only in environment variables
-- ✅ SSH agent forwarding for authentication
-- ✅ Auto `.ai-state/` → `.gitignore`
-
-### 🔧 SSH Configuration Sanitization
-**Removed from SSH config for container compatibility**:
-
-- `UseKeychain` - macOS specific
-- `AddKeysToAgent` - Agent management
-- `IdentityFile` - Key paths
-- `IdentitiesOnly` - Identity restriction
-
-### 🔑 Authentication Flow
-
-```
-Host SSH Agent
-    ↓
-Forward to Container
-    ↓
-Sanitized Config
-    ↓
-Git/GitHub Operations
-```
-
-## 🤖 AI Mode Differences
-
-| Feature | 🧠 Gemini | 🤖 Claude Code |
-|---------|-----------|----------------|
-| **Persona** | DevOps Engineer | Senior Software Engineer |
-| **Strengths** | Systems, automation, CI/CD | Code, algorithms, architecture |
-| **Commit Style** | Conventional, semantic | Detailed, descriptive |
-| **Authentication** | OAuth Google | API Key Anthropic |
-| **Best For** | Infrastructure, deployment | Code review, debugging |
-
-## 💼 Common Workflows
-
-### 🔄 Development Cycle
-**Typical AI-Assisted Development**:
-
-```bash
-# 1. Start with Gemini for system thinking
-cd ~/project
-gemini                    # DevOps perspective
-# ... make infrastructure changes ...
-aic                       # Commit with semantic style
-
-# 2. Switch to Claude for code quality
-ai-mode claude            # Change AI mode
-claude                    # Code review mode
-# ... improve code quality ...
-cic                       # Commit with detailed style
-```
-
-### 🚀 First-time Setup
-**Complete Onboarding**:
-
-```bash
-# 1. Installation
-git clone <repo> ~/tools/claude-code-docker-tools
-cd ~/tools/claude-code-docker-tools
-./install.sh && source ~/.zshrc
-
-# 2. Configure APIs
-nano ~/.docker-ai-config/env
-# Add: export CLAUDE_API_KEY="sk-ant-api03-..."
-
-# 3. Initialize Gemini
-gemini                    # First run triggers OAuth
-
-# 4. Start working
-gemini                    # or: claude
-```
-
-**📖 For Git operations**: See [GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md) for complete Git guide including handoff procedures.
-
-## 🐛 Troubleshooting
-
-### 🔧 Common Issues & Solutions
-
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| **Docker not running** | "Cannot connect to daemon" | `open -a Docker` |
-| **SSH agent empty** | Git auth failures | `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` |
-| **Claude API missing** | "API key not found" | Edit `~/.docker-ai-config/env` |
-| **Permission denied** | Docker mount errors | Check folder permissions |
-
-**🔧 Git-specific issues**: See [Troubleshooting in GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md#-emergency-procedures) for Git-related problems.
-
-### 🩺 Diagnostic Commands
-
-```bash
-# System checks
-docker info                                    # Docker status
-ssh-add -l                                     # SSH agent status
-docker run --rm claude-code-tools --version    # Container version
-
-# Config validation
-cat ~/.docker-ai-config/env                   # Check API keys
-ls -la ~/.docker-ai-config/                   # Config directory
-```
-
-## 📦 Container Internals
-
-### 🔄 Volume Mounts
-**Container ↔ Host Mapping**:
-
-| Host | Container | Purpose |
-|------|-----------|---------|
-| `<project>` | `/app/<project-name>` | Project workspace |
-| `<project>/.ai-state` | `/root/.ai` | AI state & config |
-| SSH socket | `/run/host-services/ssh-auth.sock` | SSH forwarding |
-| `~/.gitconfig` | `/root/.gitconfig` | Git configuration |
-
-### 🔧 Environment Variables
-**Runtime Configuration**:
-
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `AI_MODE` | CLI selector (`claude`|`gemini`) | Auto-set |
-| `CLAUDE_API_KEY` | Claude authentication | 🔒 For Claude |
-| `GOOGLE_CLOUD_PROJECT` | Gemini OAuth project | Auto-set |
-| `GEMINI_MODEL` | Gemini model selection | Optional |
-| `CLAUDE_MODEL` | Claude model selection | Optional |
-
-### 🌐 Network Configuration
-**Container Network Settings**:
-
-- **Mode**: `--network host` (optimal performance)
-- **SSH**: Agent forwarding enabled
-- **Git**: Full SSH/GitHub CLI support
-- **External APIs**: Direct access (Claude/Gemini)
+### 🚀 Architecture & Planning
+- **[SESSION_MANAGEMENT_ARCHITECTURE.md](./SESSION_MANAGEMENT_ARCHITECTURE.md)** - Multi-instance design
+- **[DEVOPS_ROADMAP.md](./DEVOPS_ROADMAP.md)** - TODO, roadmap, session tracking
 
 ---
 
-## 📚 Required Reading (Study Every Session)
+## 📋 Required Reading (Study Every Session)
 
 ### 🚨 CRITICAL DOCUMENTS
 
-**MANDATORY**: Read [AI_SYSTEM_INSTRUCTIONS.md](./AI_SYSTEM_INSTRUCTIONS.md) before making any changes to this repository.
+**MANDATORY**: Read [AI_SYSTEM_INSTRUCTIONS.md](./AI_SYSTEM_INSTRUCTIONS.md) before making any changes.
 
 **⚠️ This document contains**:
 - Critical testing principles
@@ -321,10 +114,12 @@ ls -la ~/.docker-ai-config/                   # Config directory
 - ✅ Quality standards
 - ✅ Testing discipline
 
-### 📖 Additional References
+### 🔄 Session Tracking
 
-- **[GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md)** - Complete Git operations guide, handoff procedures, and emergency rollback instructions
-- **[SESSION_MANAGEMENT_ARCHITECTURE.md](./SESSION_MANAGEMENT_ARCHITECTURE.md)** - Multi-instance architecture design for running multiple concurrent AI assistants across different projects
+Check [DEVOPS_ROADMAP.md](./DEVOPS_ROADMAP.md#-session-tracker) for:
+- Today's completed tasks
+- In-progress items
+- Weekly TODO list
 
 ---
 
@@ -334,7 +129,9 @@ ls -la ~/.docker-ai-config/                   # Config directory
 Priority: CRITICAL
 Type: AI_INSTRUCTIONS
 Scope: ENTIRE_REPOSITORY
-Version: 2.0
+Version: 3.0 (Hub Model)
+Lines: 120 (target: <150)
 Last Updated: 2025-12-11
+Navigation: 2-click max
 Validated: ✅
 ```

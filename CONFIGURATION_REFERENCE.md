@@ -3,6 +3,8 @@
 > **⚙️ Complete Configuration Reference**
 > *All settings, environment variables, and customization options*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 📋 Configuration Overview
 
 This document provides a comprehensive reference for all configuration options in the Dual AI Assistant Environment.

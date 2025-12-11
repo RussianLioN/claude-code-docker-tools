@@ -3,6 +3,8 @@
 > **🔒 Comprehensive Security Guide**
 > *Zero Trust security model, best practices, and threat mitigation*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 🛡️ Security Overview
 
 This document outlines the comprehensive security model for the Dual AI Assistant Environment, implementing a Zero Trust architecture with defense-in-depth principles.

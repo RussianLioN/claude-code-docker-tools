@@ -3,6 +3,8 @@
 > **🚀 Development Roadmap & Session Tracker**
 > *TODO items, future enhancements, and session-based progress tracking*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 📅 Session Tracker
 
 **Current Session**: 2025-12-11

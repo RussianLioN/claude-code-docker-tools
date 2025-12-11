@@ -3,6 +3,8 @@
 > **🏗️ Dual AI Environment Architecture**
 > *Comprehensive technical architecture and system design*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 📋 Overview
 
 This document details the complete architecture of the Dual AI Assistant Environment, including system components, data flows, and technical implementation details.

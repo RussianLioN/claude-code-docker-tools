@@ -1,5 +1,7 @@
 # AI_SYSTEM_INSTRUCTIONS.md
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 🔥 CRITICAL TESTING PRINCIPLES (NEVER VIOLATE!)
 
 **These principles are MANDATORY and OVERRIDE all other instructions. Violation of these principles is unacceptable.**

@@ -3,6 +3,8 @@
 > **🔄 GitOps & Handoff Guide for AI-Assisted Development**
 > *Complete reference for Git operations, branching strategies, and handoff procedures*
 
+**📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
+
 ## 📑 Table of Contents
 
 1. [⚡ Quick Git Commands](#-quick-git-commands) - Daily operations
