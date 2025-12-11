@@ -242,6 +242,8 @@ gemini                    # First run triggers OAuth
 gemini                    # or: claude
 ```
 
+**📖 For Git operations**: See [GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md) for complete Git guide including handoff procedures.
+
 ## 🐛 Troubleshooting
 
 ### 🔧 Common Issues & Solutions
@@ -251,8 +253,9 @@ gemini                    # or: claude
 | **Docker not running** | "Cannot connect to daemon" | `open -a Docker` |
 | **SSH agent empty** | Git auth failures | `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` |
 | **Claude API missing** | "API key not found" | Edit `~/.docker-ai-config/env` |
-| **HTTPS Git remote** | Auth failures in container | `git remote set-url origin git@github.com:user/repo.git` |
 | **Permission denied** | Docker mount errors | Check folder permissions |
+
+**🔧 Git-specific issues**: See [Troubleshooting in GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md#-emergency-procedures) for Git-related problems.
 
 ### 🩺 Diagnostic Commands
 
@@ -317,6 +320,10 @@ ls -la ~/.docker-ai-config/                   # Config directory
 - ✅ System stability
 - ✅ Quality standards
 - ✅ Testing discipline
+
+### 📖 Additional References
+
+- **[GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md)** - Complete Git operations guide, handoff procedures, and emergency rollback instructions
 
 ---
 
