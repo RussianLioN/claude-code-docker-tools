@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 AI_TOOLS_HOME=${0:a:h}
+SESSION_MANAGER_SCRIPT="${AI_TOOLS_HOME}/scripts/ai-session-manager.sh"
 
 # --- 1. SYSTEM CHECKS ---
 
@@ -50,89 +51,46 @@ function check_claude_update() {
 
 # --- 2. MAIN WRAPPER ---
 
-function gemini() {
-  ensure_docker_running
-  ensure_ssh_loaded
-  
-  local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  local TARGET_DIR
-  local STATE_DIR
-  local GLOBAL_AUTH="$HOME/.docker-ai-config/google_accounts.json"
-  local GLOBAL_SETTINGS="$HOME/.docker-ai-config/settings.json"
-  local CLAUDE_CONFIG="$HOME/.docker-ai-config/claude_config.json"
-  local GH_CONFIG_DIR="$HOME/.docker-ai-config/gh_config"
-  local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
-  local GIT_CONFIG="$HOME/.gitconfig"
-  local SSH_CONFIG_SRC="$HOME/.ssh/config"
-  
-  local IS_INTERACTIVE=false
-  local DOCKER_FLAGS="-i"
-
-  if [ -t 1 ] && [ -z "$1" ]; then 
-    DOCKER_FLAGS="-it"
-    IS_INTERACTIVE=true
-  fi
-
-  # ИСПРАВЛЕНИЕ: Проверка обновлений ТОЛЬКО в интерактивном режиме
-  if [[ "$IS_INTERACTIVE" == "true" ]]; then
-    check_ai_update
-  fi
-
-  if [[ -n "$GIT_ROOT" ]]; then
-    TARGET_DIR="$GIT_ROOT"
-    STATE_DIR="$GIT_ROOT/.ai-state"
-  else
-    TARGET_DIR="$(pwd)"
-    STATE_DIR="$HOME/.docker-ai-config/global_state"
-  fi
-  
-  local PROJECT_NAME=$(basename "$TARGET_DIR")
-  local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
-
-  mkdir -p "$STATE_DIR"
-  mkdir -p "$GH_CONFIG_DIR"
-  touch "$SSH_KNOWN_HOSTS"
-
-  # SSH Sanitization
-  local SSH_CONFIG_CLEAN="$STATE_DIR/ssh_config_clean"
-  if [[ -f "$SSH_CONFIG_SRC" ]]; then
-    grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
-  else
-    touch "$SSH_CONFIG_CLEAN"
-  fi
-
-  if [[ -f "$GLOBAL_AUTH" ]]; then cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"; fi
-  if [[ -f "$GLOBAL_SETTINGS" ]]; then cp "$GLOBAL_SETTINGS" "$STATE_DIR/settings.json"; fi
-
-  docker run $DOCKER_FLAGS --rm \
-    --network host \
-    -e GOOGLE_CLOUD_PROJECT=gemini-cli-auth-478707 \
-    -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
-    -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
-    -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
-    -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
-    -v "${GIT_CONFIG}":/root/.gitconfig \
-    -v "${GH_CONFIG_DIR}":/root/.config/gh \
-    -w "${CONTAINER_WORKDIR}" \
-    -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
-    -v "${STATE_DIR}":/root/.ai \
-    claude-code-tools "$@"
-
-  if [[ -f "$STATE_DIR/google_accounts.json" ]]; then cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH"; fi
-  if [[ -f "$STATE_DIR/settings.json" ]]; then cp "$STATE_DIR/settings.json" "$GLOBAL_SETTINGS"; fi
-
-  if [[ "$IS_INTERACTIVE" == "true" && -n "$GIT_ROOT" ]]; then
-    echo -e "\n👋 Сеанс Gemini завершен."
-    aic
-  fi
-}
-
 # --- 3. CLAUDE MODE ---
 
 function claude() {
+  local session_name=""
+  local use_session=false
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --session|-s)
+        use_session=true
+        session_name="${2:-}"
+        shift 2
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  if [[ "$use_session" == "true" ]]; then
+    if [[ -z "$session_name" ]]; then
+      echo "❌ Имя сессии требуется при использовании --session"
+      return 1
+    fi
+
+    # Start session if not running
+    local session_status=$(ai-session status 2>/dev/null | grep "Running Instances" | awk '{print $3}')
+    if [[ -z "$session_status" ]] || [[ "$session_status" == "0" ]]; then
+      echo "🚀 Запуск сессии '$session_name' для Claude..."
+      ai-session start "$session_name"
+    fi
+
+    echo "🔗 Claude работает в сессии: $session_name"
+  fi
+
+  # Original claude function logic
   ensure_docker_running
   ensure_ssh_loaded
-  
+
   local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
   local TARGET_DIR
   local STATE_DIR
@@ -141,11 +99,11 @@ function claude() {
   local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
   local GIT_CONFIG="$HOME/.gitconfig"
   local SSH_CONFIG_SRC="$HOME/.ssh/config"
-  
+
   local IS_INTERACTIVE=false
   local DOCKER_FLAGS="-i"
 
-  if [ -t 1 ] && [ -z "$1" ]; then 
+  if [ -t 1 ] && [ -z "$1" ]; then
     DOCKER_FLAGS="-it"
     IS_INTERACTIVE=true
   fi
@@ -161,7 +119,7 @@ function claude() {
     TARGET_DIR="$(pwd)"
     STATE_DIR="$HOME/.docker-ai-config/global_state"
   fi
-  
+
   local PROJECT_NAME=$(basename "$TARGET_DIR")
   local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
 
@@ -180,8 +138,15 @@ function claude() {
   # Claude конфигурация
   if [[ -f "$CLAUDE_CONFIG" ]]; then cp "$CLAUDE_CONFIG" "$STATE_DIR/claude_config.json"; fi
 
+  # Add session info to container
+  local SESSION_ENV=""
+  if [[ "$use_session" == "true" ]]; then
+    SESSION_ENV="-e AI_SESSION_NAME=$session_name"
+  fi
+
   docker run $DOCKER_FLAGS --rm \
     --network host \
+    $SESSION_ENV \
     -e AI_MODE=claude \
     -e CLAUDE_API_KEY="${CLAUDE_API_KEY:-}" \
     -e CLAUDE_MODEL="${CLAUDE_MODEL:-claude-3-5-sonnet-20241022}" \
@@ -429,4 +394,176 @@ function ai-mode() {
       echo "Доступные: gemini, claude"
       ;;
   esac
+}
+
+# --- 8. SESSION MANAGEMENT ---
+
+function ai-session() {
+  if [[ ! -f "$SESSION_MANAGER_SCRIPT" ]]; then
+    echo "❌ Session Manager not found: $SESSION_MANAGER_SCRIPT"
+    return 1
+  fi
+
+  "$SESSION_MANAGER_SCRIPT" "$@"
+}
+
+function ai-start() {
+  local session_name="${1:-}"
+  if [[ -z "$session_name" ]]; then
+    echo "Использование: ai-start <имя-сессии>"
+    return 1
+  fi
+
+  ai-session start "$session_name"
+}
+
+function ai-stop() {
+  local session_name="${1:-}"
+  if [[ -z "$session_name" ]]; then
+    echo "Использование: ai-stop <имя-сессии>"
+    return 1
+  fi
+
+  ai-session stop "$session_name"
+}
+
+function ai-list() {
+  ai-session list
+}
+
+function ai-status() {
+  ai-session status
+}
+
+function ai-restart() {
+  local session_name="${1:-}"
+  if [[ -z "$session_name" ]]; then
+    echo "Использование: ai-restart <имя-сессии>"
+    return 1
+  fi
+
+  ai-session restart "$session_name"
+}
+
+function ai-cleanup() {
+  ai-session cleanup
+}
+
+# Enhanced gemini/claude functions with session support
+function gemini() {
+  local session_name=""
+  local use_session=false
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --session|-s)
+        use_session=true
+        session_name="${2:-}"
+        shift 2
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  if [[ "$use_session" == true ]]; then
+    if [[ -z "$session_name" ]]; then
+      echo "❌ Имя сессии требуется при использовании --session"
+      return 1
+    fi
+
+    # Start session if not running
+    local session_status=$(ai-session status 2>/dev/null | grep "Running Instances" | awk '{print $3}')
+    if [[ -z "$session_status" ]] || [[ "$session_status" == "0" ]]; then
+      echo "🚀 Запуск сессии '$session_name' для Gemini..."
+      ai-session start "$session_name"
+    fi
+
+    echo "🔗 Gemini работает в сессии: $session_name"
+  fi
+
+  # Original gemini function logic
+  ensure_docker_running
+  ensure_ssh_loaded
+
+  local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+  local TARGET_DIR
+  local STATE_DIR
+  local GLOBAL_AUTH="$HOME/.docker-ai-config/google_accounts.json"
+  local GLOBAL_SETTINGS="$HOME/.docker-ai-config/settings.json"
+  local CLAUDE_CONFIG="$HOME/.docker-ai-config/claude_config.json"
+  local GH_CONFIG_DIR="$HOME/.docker-ai-config/gh_config"
+  local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
+  local GIT_CONFIG="$HOME/.gitconfig"
+  local SSH_CONFIG_SRC="$HOME/.ssh/config"
+
+  local IS_INTERACTIVE=false
+  local DOCKER_FLAGS="-i"
+
+  if [ -t 1 ] && [ -z "$1" ]; then
+    DOCKER_FLAGS="-it"
+    IS_INTERACTIVE=true
+  fi
+
+  # ИСПРАВЛЕНИЕ: Проверка обновлений ТОЛЬКО в интерактивном режиме
+  if [[ "$IS_INTERACTIVE" == "true" ]]; then
+    check_ai_update
+  fi
+
+  if [[ -n "$GIT_ROOT" ]]; then
+    TARGET_DIR="$GIT_ROOT"
+    STATE_DIR="$GIT_ROOT/.ai-state"
+  else
+    TARGET_DIR="$(pwd)"
+    STATE_DIR="$HOME/.docker-ai-config/global_state"
+  fi
+
+  local PROJECT_NAME=$(basename "$TARGET_DIR")
+  local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
+
+  mkdir -p "$STATE_DIR"
+  mkdir -p "$GH_CONFIG_DIR"
+  touch "$SSH_KNOWN_HOSTS"
+
+  # SSH Sanitization
+  local SSH_CONFIG_CLEAN="$STATE_DIR/ssh_config_clean"
+  if [[ -f "$SSH_CONFIG_SRC" ]]; then
+    grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
+  else
+    touch "$SSH_CONFIG_CLEAN"
+  fi
+
+  if [[ -f "$GLOBAL_AUTH" ]]; then cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"; fi
+  if [[ -f "$GLOBAL_SETTINGS" ]]; then cp "$GLOBAL_SETTINGS" "$STATE_DIR/settings.json"; fi
+
+  # Add session info to container
+  local SESSION_ENV=""
+  if [[ "$use_session" == true ]]; then
+    SESSION_ENV="-e AI_SESSION_NAME=$session_name"
+  fi
+
+  docker run $DOCKER_FLAGS --rm \
+    --network host \
+    $SESSION_ENV \
+    -e GOOGLE_CLOUD_PROJECT=gemini-cli-auth-478707 \
+    -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
+    -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+    -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
+    -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
+    -v "${GIT_CONFIG}":/root/.gitconfig \
+    -v "${GH_CONFIG_DIR}":/root/.config/gh \
+    -w "${CONTAINER_WORKDIR}" \
+    -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+    -v "${STATE_DIR}":/root/.ai \
+    claude-code-tools "$@"
+
+  if [[ -f "$STATE_DIR/google_accounts.json" ]]; then cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH"; fi
+  if [[ -f "$STATE_DIR/settings.json" ]]; then cp "$STATE_DIR/settings.json" "$GLOBAL_SETTINGS"; fi
+
+  if [[ "$IS_INTERACTIVE" == "true" && -n "$GIT_ROOT" ]]; then
+    echo -e "\n👋 Сеанс Gemini завершен."
+    aic
+  fi
 }

@@ -94,6 +94,11 @@ gexec <command>           # Execute in container
 - **[SESSION_MANAGEMENT_ARCHITECTURE.md](./SESSION_MANAGEMENT_ARCHITECTURE.md)** - Multi-instance design
 - **[DEVOPS_ROADMAP.md](./DEVOPS_ROADMAP.md)** - TODO, roadmap, session tracking
 
+### 📋 Active Implementation Plans
+- **[Session Manager v1.0](./.ai-plans/session-manager-implementation.md)** - Current implementation plan
+- **[Development Backlog](./.ai-plans/backlog.md)** - Future epics and enhancements
+- **[Plan Repository](./.ai-plans/)** - All planning documents and templates
+
 ---
 
 ## 📋 Required Reading (Study Every Session)

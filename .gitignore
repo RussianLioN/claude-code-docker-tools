@@ -23,3 +23,5 @@ gh_config/
 # Temporary files
 *.tmp
 *.log
+.ai-plans/temp/
+.ai-plans/*.draft.md
