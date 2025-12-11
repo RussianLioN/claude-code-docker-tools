@@ -324,6 +324,7 @@ ls -la ~/.docker-ai-config/                   # Config directory
 ### 📖 Additional References
 
 - **[GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md)** - Complete Git operations guide, handoff procedures, and emergency rollback instructions
+- **[SESSION_MANAGEMENT_ARCHITECTURE.md](./SESSION_MANAGEMENT_ARCHITECTURE.md)** - Multi-instance architecture design for running multiple concurrent AI assistants across different projects
 
 ---
 
