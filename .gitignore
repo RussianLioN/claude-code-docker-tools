@@ -16,6 +16,7 @@ gemini-cli.tar
 claude_config.json
 .env
 CLAUDE_API_KEY
+.claude/
 
 # GitHub CLI
 gh_config/
