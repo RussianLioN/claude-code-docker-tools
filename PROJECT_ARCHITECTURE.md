@@ -109,7 +109,7 @@ docker run --rm \
   -v "${GIT_CONFIG}":/root/.gitconfig \
   -v "${GH_CONFIG_DIR}":/root/.config/gh \
   -w "${CONTAINER_WORKDIR}" \
-  -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+  -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
   -v "${STATE_DIR}":/root/.gemini \
   claude-code-tools "$@"
 ```
@@ -117,34 +117,32 @@ docker run --rm \
 **Ключевые особенности экспертного подхода**:
 - `--rm`: Автоматическая очистка контейнера
 - `--network host`: Оптимальная производительность
-- Минимальный набор volume mounts
+- **Adaptive Workspace**: Монтирование в `/workspace` для чистых путей
+- **Global Auth**: Единое хранилище авторизации для всех проектов
 - SSH agent forwarding для аутентификации
 
-#### 3. Configuration Synchronization (Экспертный паттерн)
+#### 3. Configuration Synchronization (Global-First)
 
-**Sync-In Pattern (до запуска)**:
+**Global State Pattern**:
 ```bash
-# Определение директорий
-if [[ -n "$GIT_ROOT" ]]; then
-  TARGET_DIR="$GIT_ROOT"
-  STATE_DIR="$GIT_ROOT/.gemini-state"  # или .ai-state
-else
-  TARGET_DIR="$(pwd)"
-  STATE_DIR="$HOME/.docker-gemini-config/global_state"
-fi
+# Auth всегда берется из глобального хранилища
+export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state"
+export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
 
-# Подготовка конфигураций
-mkdir -p "$STATE_DIR"
-if [[ -f "$GLOBAL_AUTH" ]]; then cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"; fi
-if [[ -f "$GLOBAL_SETTINGS" ]]; then cp "$GLOBAL_SETTINGS" "$STATE_DIR/settings.json"; fi
+# Sync-In (до запуска)
+cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"
+
+# Sync-Out (после завершения)
+# Claude сам обновляет файлы в примонтированном volume
 ```
 
-**Sync-Out Pattern (после завершения)**:
-```bash
-# Сохранение изменений
-if [[ -f "$STATE_DIR/google_accounts.json" ]]; then cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH"; fi
-if [[ -f "$STATE_DIR/settings.json" ]]; then cp "$STATE_DIR/settings.json" "$GLOBAL_SETTINGS"; fi
-```
+#### 4. Native Mode (Hybrid Architecture)
+
+**Флаг `--native`**:
+Позволяет запускать локальную версию Claude (npm) вместо Docker-контейнера.
+- **Изоляция**: Использует хостовое окружение (Node.js, авторизация в `~/.claude`).
+- **Use Case**: Для задач, требующих прямого доступа к сложным локальным инструментам или когда Docker недоступен.
+- **Авторизация**: Раздельная (Docker Auth != Native Auth).
 
 ## 🔧 Technical Implementation
 
