@@ -146,12 +146,19 @@ function prepare_configuration() {
   # Unified state directory for Claude within the project or global state
   export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
 
-  # Expert Mount Strategy: "Neutral Root"
-  # We always mount the project root (Git root or PWD) to a fixed neutral path "/workspace"
-  # This hides the host directory name (e.g., "test") and ensures consistent UI paths.
+  local PROJECT_NAME=$(basename "$TARGET_DIR")
+  
+  # Ensure PROJECT_NAME is not empty and valid
+  if [[ -z "$PROJECT_NAME" || "$PROJECT_NAME" == "/" ]]; then
+    PROJECT_NAME="project"
+  fi
+
+  # Expert Mount Strategy: "Named Workspace"
+  # We mount the project root to /workspace/<PROJECT_NAME>
+  # This ensures the project name is always visible in the path, whether it's a git root or a standalone folder.
   
   # Base workdir in container
-  export CONTAINER_BASE_DIR="/workspace"
+  export CONTAINER_BASE_DIR="/workspace/$PROJECT_NAME"
   
   # Actual workdir includes relative path
   if [[ -n "$RELATIVE_PATH" ]]; then
