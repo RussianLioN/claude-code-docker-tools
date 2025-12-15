@@ -94,10 +94,19 @@ gexec <command>           # Execute in container
 - **[GIT_WORKFLOWS.md](./GIT_WORKFLOWS.md)** - Git operations, handoff procedures
 - **[SECURITY_GUIDE.md](./SECURITY_GUIDE.md)** - Security model and best practices
 - **[CONFIGURATION_REFERENCE.md](./CONFIGURATION_REFERENCE.md)** - All settings and customization
+- **[CREDENTIAL_MIGRATION_GUIDE.md](./CREDENTIAL_MIGRATION_GUIDE.md)** - Migration from legacy systems
+
+### 🧪 Testing & QA
+- **[ENTERPRISE_TESTING_STRATEGY.md](./tests/ENTERPRISE_TESTING_STRATEGY.md)** - Comprehensive testing strategy
+- **[USER_TESTING_GUIDE.md](./tests/USER_TESTING_GUIDE.md)** - Guide for manual user testing
+- **[UI_TEST_COMMANDS.md](./UI_TEST_COMMANDS.md)** - UI verification commands
+- **[TESTING_SUMMARY.md](./TESTING_SUMMARY.md)** - Summary of test coverage
 
 ### 🚀 Architecture & Planning
 - **[SESSION_MANAGEMENT_ARCHITECTURE.md](./SESSION_MANAGEMENT_ARCHITECTURE.md)** - Multi-instance design
 - **[DEVOPS_ROADMAP.md](./DEVOPS_ROADMAP.md)** - TODO, roadmap, session tracking
+- **[DEVOPS_EXPERT_RECOMMENDATIONS.md](./DEVOPS_EXPERT_RECOMMENDATIONS.md)** - Strategic recommendations
+- **[MULTI_AI_ARCHITECTURE.md](./docs/MULTI_AI_ARCHITECTURE.md)** - Alternative architectural concepts
 
 ### 📋 Active Implementation Plans
 - **[Session Manager v1.0](./.ai-plans/session-manager-implementation.md)** - Current implementation plan
