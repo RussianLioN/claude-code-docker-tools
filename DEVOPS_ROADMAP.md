@@ -88,9 +88,9 @@
   - [x] Implement sync-in/sync-out configuration
   - [x] Add SSH agent forwarding
 
-- [ ] **Cleanup & Simplification**
-  - [ ] Remove ai-session-manager.sh (persistent)
-  - [ ] Clean up registry and state tracking
+- [x] **Cleanup & Simplification**
+  - [x] Remove ai-session-manager.sh (persistent)
+  - [x] Clean up registry and state tracking
   - [ ] Update all documentation
   - [ ] Test simplified approach
 

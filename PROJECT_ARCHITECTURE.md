@@ -39,7 +39,7 @@
 │  │  ├─ claude() → Docker --rm (Ephemeral)            │ │ │
 │  │  ├─ aic() / cic() (AI Commits)                     │ │ │
 │  │  ├─ gexec() (System Commands)                      │ │ │
-│  │  └─ ai-session-manager.sh (Legacy Support)        │ │ │
+│  │  └─ [Legacy Components Removed]                   │ │ │
 │  └─────────────────────────────────────────────────────┘ │ │
 ├─────────────────────────────────────────────────────────┤
 │                    Docker Runtime                       │
@@ -155,7 +155,6 @@ claude-code-docker-tools/
 ├── entrypoint.sh                   # Runtime router
 ├── install.sh                      # Setup script
 ├── scripts/
-│   ├── ai-session-manager.sh       # Legacy support (опционально)
 │   └── docker-utils.sh             # Docker utilities
 ├── old-scripts/
 │   └── gemini.zsh                  # Эталонный экспертный код
@@ -278,10 +277,10 @@ flowchart TD
 docker run --rm claude-code-tools "$@"
 ```
 
-**2. ai-session-manager.sh**:
+**2. Legacy Cleanup**:
 ```bash
-# Опционально: legacy support
-# Или полное удаление в пользу простых wrapper функций
+# ai-session-manager.sh removed
+# All persistent container logic deprecated
 ```
 
 **3. Configuration**:

@@ -459,25 +459,18 @@ function ai-mode() {
       echo "Используйте: claude [команда]" >&2
       ;;
     "help"|"-h"|"--help"|"")
-      echo "AI Assistant - Двойной режим работы" >&2
-      echo "" >&2
-      echo "Доступные режимы:" >&2
-      echo "  gemini     🧠 Gemini AI Assistant" >&2
-      echo "  claude     🤖 Claude Code Assistant" >&2
-      echo "    --native Указание флага запускает локальную версию" >&2
-      echo "" >&2
-      echo "AI коммиты:" >&2
-      echo "  aic        Gemini AI Commit" >&2
-      echo "  cic        Claude AI Commit" >&2
-      echo "" >&2
-      echo "Системные команды:" >&2
-      echo "  gexec      Выполнить в AI окружении" >&2
-      echo "" >&2
-      echo "Примеры:" >&2
-      echo "  gemini              # Интерактивный режим" >&2
-      echo "  gemini 'help me'    # Команда с аргументом" >&2
-      echo "  aic                 # AI коммит через Gemini" >&2
-      echo "  gexec 'npm test'    # Выполнить в контейнере" >&2
+      echo "🤖 AI Assistant (Ephemeral Expert Architecture)"
+      echo "Usage: ai-mode <gemini|claude> | gemini [args] | claude [args]"
+      echo ""
+      echo "Commands:"
+      echo "  gemini     🚀 Gemini Code Assistant"
+      echo "  claude     🤖 Claude Code Assistant"
+      echo "    --native Указание флага запускает локальную версию"
+      echo ""
+      echo "  aic        📝 Gemini AI Commit"
+      echo "  cic        📝 Claude AI Commit"
+      echo "  gexec      ⚙️ Execute system command in container"
+      echo ""
       ;;
     *)
       echo "❌ Неизвестный режим: $mode" >&2
