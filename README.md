@@ -1,6 +1,6 @@
 # Claude Code + Gemini Dual AI Assistant: Enterprise Environment
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg?style=flat-square)
 ![Architecture](https://img.shields.io/badge/architecture-Dual%20AI%20%2B%20SSH%20Forwarding-purple.svg?style=flat-square)
 ![Security](https://img.shields.io/badge/security-Zero%20Trust-green.svg?style=flat-square)
 ![Status](https://img.shields.io/badge/status-production--ready-success.svg?style=flat-square)
@@ -73,9 +73,9 @@
 │    ├─ AI_MODE=claude → Claude CLI                       │
 │    └─ AI_MODE=gemini → Gemini CLI                       │
 │                                                         │
-│  /app/$PROJECT (Mounted Volume)                         │
+│  /workspace (Mounted Volume)                            │
 │  /root/.ai (State Sync)                                 │
-│  SSH Agent Forwarding                                    │
+│  SSH Agent Forwarding                                   │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -87,9 +87,15 @@
 
 ### Паттерн Sync In / Sync Out (Решение проблемы VirtioFS)
 Адаптированный алгоритм **State Synchronization** для dual-режима:
-1.  **Boot Phase (Sync In):** Копирование конфигураций из `~/.docker-ai-config/` в `.ai-state/`.
+1.  **Boot Phase (Sync In):** Копирование конфигураций из глобального хранилища `~/.docker-ai-config/global_state` в контейнер.
 2.  **Runtime Phase:** Docker монтирует `.ai-state/` с конфигурациями обоих AI.
 3.  **Shutdown Phase (Sync Out):** Сохранение обновленных конфигураций обратно.
+
+### Adaptive Workspace (Smart Mounting)
+Система автоматически определяет контекст запуска:
+- **Git Root:** Монтируется в `/workspace/<project_name>`.
+- **Subdirectory:** Корень Git монтируется в `/workspace`, скрывая имя родительской папки.
+- **No Git:** Текущая папка монтируется в `/workspace/<folder_name>`.
 
 ### Сетевая Безопасность (SSH Agent Forwarding)
 Пробрасывание Unix-сокета SSH агента: `-v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock`.
@@ -305,4 +311,4 @@ export AI_CURRENT_MODE="gemini"  # или "claude"
 - **claude-3-haiku-20240307**: Быстрые ответы
 
 ---
-*Documentation Version 2.0.0. Dual AI Architecture Implementation.*
+*Documentation Version 2.1.0. Ephemeral Architecture Implementation.*
