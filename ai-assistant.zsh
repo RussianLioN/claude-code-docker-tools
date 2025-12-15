@@ -132,17 +132,36 @@ function prepare_configuration() {
     # export STATE_DIR="$GIT_ROOT/.ai-state" # DISABLED: Local state causes auth fragmentation
     export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state" # ENABLED: Force global state for consistent auth
     
-    # Optional: If you really want project-specific isolation, uncomment above and use sync-in below
+    # Calculate relative path from git root to current dir
+    # This ensures we land in the correct subdirectory inside the container
+    local RELATIVE_PATH="${PWD#$GIT_ROOT}"
+    # Remove leading slash if present
+    RELATIVE_PATH="${RELATIVE_PATH#/}"
   else
     export TARGET_DIR="$(pwd)"
     export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state"
+    local RELATIVE_PATH=""
   fi
   
   # Unified state directory for Claude within the project or global state
   export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
 
   local PROJECT_NAME=$(basename "$TARGET_DIR")
-  export CONTAINER_WORKDIR="/app/$PROJECT_NAME"
+  
+  # Ensure PROJECT_NAME is not empty and valid
+  if [[ -z "$PROJECT_NAME" || "$PROJECT_NAME" == "/" ]]; then
+    PROJECT_NAME="project"
+  fi
+  
+  # Base workdir in container
+  export CONTAINER_BASE_DIR="/app/$PROJECT_NAME"
+  
+  # Actual workdir includes relative path
+  if [[ -n "$RELATIVE_PATH" ]]; then
+    export CONTAINER_WORKDIR="$CONTAINER_BASE_DIR/$RELATIVE_PATH"
+  else
+    export CONTAINER_WORKDIR="$CONTAINER_BASE_DIR"
+  fi
 
   mkdir -p "$STATE_DIR"
   mkdir -p "$GH_CONFIG_DIR"
@@ -254,7 +273,7 @@ function run_ephemeral_container() {
       -v "${GH_CONFIG_DIR}":/root/.config/gh \
       -v "${CLAUDE_STATE_DIR}":/root/.claude-config \
       -w "${CONTAINER_WORKDIR}" \
-      -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+      -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
       -v "${STATE_DIR}":/root/.gemini \
       "$ai_image" "$@"
   else
@@ -294,7 +313,7 @@ function run_ephemeral_container() {
       -v "${GH_CONFIG_DIR}":/root/.config/gh \
       -v "${CLAUDE_STATE_DIR}":/root/.claude-config \
       -w "${CONTAINER_WORKDIR}" \
-      -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+      -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
       -v "${STATE_DIR}":/root/.gemini \
       "$ai_image" "$@"
       
@@ -360,6 +379,14 @@ function gemini() {
 }
 
 function claude() {
+  # Native bypass check
+  if [[ "$1" == "--native" || "$1" == "--local" ]]; then
+    shift
+    echo "🖥️  Запуск нативной версии Claude..." >&2
+    command claude "$@"
+    return $?
+  fi
+
   ensure_docker_running
   ensure_ssh_loaded
   prepare_configuration
@@ -433,6 +460,7 @@ function ai-mode() {
       echo "Доступные режимы:" >&2
       echo "  gemini     🧠 Gemini AI Assistant" >&2
       echo "  claude     🤖 Claude Code Assistant" >&2
+      echo "    --native Указание флага запускает локальную версию" >&2
       echo "" >&2
       echo "AI коммиты:" >&2
       echo "  aic        Gemini AI Commit" >&2
