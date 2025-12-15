@@ -1,13 +1,29 @@
 # PROJECT_ARCHITECTURE.md
 
-> **🏗️ Dual AI Environment Architecture**
-> *Comprehensive technical architecture and system design*
+> **🏗️ Эфемерная Dual AI Environment Architecture**
+> *Экспертная архитектура на основе эфемерных контейнеров и проверенных паттернов*
 
 **📍 Navigation**: [← Back to CLAUDE.md](./CLAUDE.md)
 
 ## 📋 Overview
 
-This document details the complete architecture of the Dual AI Assistant Environment, including system components, data flows, and technical implementation details.
+Документ описывает переработанную архитектуру Dual AI Assistant Environment на основе **экспертного подхода** с эфемерными контейнерами. В отличие от предыдущей версии с персистентными контейнерами, новая архитектура следует проверенным паттернам из `old-scripts/gemini.zsh`.
+
+## 🎯 Ключевой Архитектурный Принцип
+
+### Эфемерные Контейнеры vs Персистентные
+
+**❌ Старый подход (проблемный)**:
+- Персистентные контейнеры с сложным lifecycle management
+- State tracking, health monitoring, auto-recovery
+- Лимиты контейнеров, проблемы с очисткой
+- Сложная синхронизация состояния
+
+**✅ Новый подход (экспертный)**:
+- Эфемерные контейнеры с `--rm`
+- Запуск и забывание для каждой операции
+- Автоматическая очистка
+- Простая и надежная модель
 
 ## 🏛️ Core Architecture
 
@@ -19,14 +35,15 @@ This document details the complete architecture of the Dual AI Assistant Environ
 ├─────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐ │
 │  │           ai-assistant.zsh (Shell Wrapper)         │ │ │
-│  │  ├─ gemini() → Docker (Gemini Mode)               │ │ │
-│  │  ├─ claude() → Docker (Claude Mode)               │ │ │
+│  │  ├─ gemini() → Docker --rm (Ephemeral)            │ │ │
+│  │  ├─ claude() → Docker --rm (Ephemeral)            │ │ │
 │  │  ├─ aic() / cic() (AI Commits)                     │ │ │
-│  │  └─ gexec() (System Commands)                      │ │ │
+│  │  ├─ gexec() (System Commands)                      │ │ │
+│  │  └─ ai-session-manager.sh (Legacy Support)        │ │ │
 │  └─────────────────────────────────────────────────────┘ │ │
 ├─────────────────────────────────────────────────────────┤
-│                    Docker Network                       │
-├─────────────────────────────────────────────────────────┤
+│                    Docker Runtime                       │
+│              (Эфемерные контейнеры --rm)                 │
 │  ┌─────────────────────────────────────────────────────┐ │
 │  │            claude-code-tools Container              │ │ │
 │  │  ├─ entrypoint.sh (Mode Detection)                 │ │ │
@@ -34,16 +51,18 @@ This document details the complete architecture of the Dual AI Assistant Environ
 │  │  ├─ @google/gemini-cli                             │ │ │
 │  │  ├─ @anthropic-ai/claude-cli                       │ │ │
 │  │  └─ System Utilities                               │ │ │
+│  │         ← Запускается для каждой команды             │ │
 │  └─────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
                            │
-                    Volume Mounts
+                    Volume Mounts (временные)
                            │
 ┌─────────────────────────────────────────────────────────┐
 │                Host File System                        │
 │  ├─ Project Directory (/app/<project>)                │
 │  ├─ Configuration (~/.docker-ai-config/)              │
-│  └─ State Management (.ai-state/)                     │
+│  ├─ Project State (.gemini-state/.ai-state/)         │
+│  └─ Session Registry (~/.ai-sessions/)                │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -51,224 +70,271 @@ This document details the complete architecture of the Dual AI Assistant Environ
 
 #### 1. Shell Wrapper (ai-assistant.zsh)
 
-**Purpose**: Central orchestration point for all AI interactions
+**Purpose**: Центральная точка оркестрации AI операций
 
-**Key Functions**:
+**Экспертные функции**:
 ```bash
-# Mode Selection
-gemini()      # Launches Gemini CLI in Docker
-claude()      # Launches Claude Code CLI in Docker
+# Основные AI функции (экспертный паттерн)
+gemini()      # Docker run --rm gemini-cli "$@"
+claude()      # Docker run --rm claude-cli "$@"
 
-# AI-Powered Operations
-aic()         # Gemini AI Commit (DevOps style)
-cic()         # Claude AI Commit (SE style)
+# AI-операции (экспертный паттерн)
+aic()         # Docker run --rm gemini-cli commit
+cic()         # Docker run --rm claude-cli commit
 
-# System Operations
-gexec()       # Execute commands in container
-ai-mode()     # Switch between AI modes
+# Системные операции (экспертный паттерн)
+gexec()       # Docker run --rm <command>
+ai-mode()     # Переключение AI режимов
 ```
 
-**Design Patterns**:
-- Factory Pattern for mode selection
-- Template Method for AI commits
-- Proxy Pattern for command execution
+**Экспертные паттерны**:
+- **Ephemeral Pattern**: Каждый вызов = новый контейнер с `--rm`
+- **Sync-In/Sync-Out**: Конфигурация синхронизируется при запуске/завершении
+- **Zero Trust**: Секреты никогда не покидают хост
+- **Smart Detection**: Автоматическое определение project root
 
-#### 2. Container Runtime
+#### 2. Container Runtime (Экспертный подход)
 
 **Base Image**: `node:22-alpine`
 
-**Installed Components**:
-- Node.js 22.x
-- @google/gemini-cli
-- @anthropic-ai/claude-cli
-- System utilities (git, ssh, gh, curl)
-
-**Configuration**:
-```dockerfile
-# Environment Variables
-ENV CLAUDE_MODEL="claude-3-5-sonnet-20241022"
-ENV GEMINI_MODEL="gemini-2.5-pro"
-ENV AI_MODE=""  # Detected at runtime
+**Экспертная конфигурация**:
+```bash
+docker run --rm \
+  --network host \
+  -e GOOGLE_CLOUD_PROJECT=gemini-cli-auth-478707 \
+  -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
+  -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+  -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
+  -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
+  -v "${GIT_CONFIG}":/root/.gitconfig \
+  -v "${GH_CONFIG_DIR}":/root/.config/gh \
+  -w "${CONTAINER_WORKDIR}" \
+  -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+  -v "${STATE_DIR}":/root/.gemini \
+  claude-code-tools "$@"
 ```
 
-#### 3. State Synchronization
+**Ключевые особенности экспертного подхода**:
+- `--rm`: Автоматическая очистка контейнера
+- `--network host`: Оптимальная производительность
+- Минимальный набор volume mounts
+- SSH agent forwarding для аутентификации
 
-**Challenge**: VirtioFS limitations on macOS
+#### 3. Configuration Synchronization (Экспертный паттерн)
 
-**Solution**: Sync In / Sync Out Pattern
+**Sync-In Pattern (до запуска)**:
+```bash
+# Определение директорий
+if [[ -n "$GIT_ROOT" ]]; then
+  TARGET_DIR="$GIT_ROOT"
+  STATE_DIR="$GIT_ROOT/.gemini-state"  # или .ai-state
+else
+  TARGET_DIR="$(pwd)"
+  STATE_DIR="$HOME/.docker-gemini-config/global_state"
+fi
 
+# Подготовка конфигураций
+mkdir -p "$STATE_DIR"
+if [[ -f "$GLOBAL_AUTH" ]]; then cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"; fi
+if [[ -f "$GLOBAL_SETTINGS" ]]; then cp "$GLOBAL_SETTINGS" "$STATE_DIR/settings.json"; fi
 ```
-┌────────────────────┐    Sync In     ┌──────────────────┐
-│ ~/.docker-ai-config│ ──────────────→ │ .ai-state/        │
-│    (Global)        │                │   (Per Project)   │
-└────────────────────┘                └──────────────────┘
-         ▲                                    ▲
-         │                                    │
-    Sync Out                            Runtime Mount
-         │                                    │
-┌────────────────────┐                ┌──────────────────┐
-│ Updated Configs    │ ◀───────────── │ Container Access │
-└────────────────────┘                └──────────────────┘
+
+**Sync-Out Pattern (после завершения)**:
+```bash
+# Сохранение изменений
+if [[ -f "$STATE_DIR/google_accounts.json" ]]; then cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH"; fi
+if [[ -f "$STATE_DIR/settings.json" ]]; then cp "$STATE_DIR/settings.json" "$GLOBAL_SETTINGS"; fi
 ```
 
 ## 🔧 Technical Implementation
 
-### Directory Structure
+### Directory Structure (Обновленная)
 
 ```
 claude-code-docker-tools/
-├── ai-assistant.zsh          # Main wrapper script
-├── Dockerfile                # Container definition
-├── entrypoint.sh             # Runtime router
-├── install.sh                # Setup script
-├── claude-config.json        # Claude configuration
-├── CLAUDE.md                 # Central AI instructions
-├── AI_SYSTEM_INSTRUCTIONS.md # Testing principles
-├── GIT_WORKFLOWS.md          # Git operations guide
-└── SESSION_MANAGEMENT_ARCHITECTURE.md  # Multi-instance design
+├── ai-assistant.zsh                # Основной wrapper (экспертный паттерн)
+├── Dockerfile                      # Определение контейнера
+├── entrypoint.sh                   # Runtime router
+├── install.sh                      # Setup script
+├── scripts/
+│   ├── ai-session-manager.sh       # Legacy support (опционально)
+│   └── docker-utils.sh             # Docker utilities
+├── old-scripts/
+│   └── gemini.zsh                  # Эталонный экспертный код
+├── claude-config.json              # Claude configuration
+├── CLAUDE.md                       # Central AI instructions
+├── AI_SYSTEM_INSTRUCTIONS.md       # Testing principles
+├── GIT_WORKFLOWS.md                # Git operations guide
+└── docs/
+    ├── PROJECT_ARCHITECTURE.md     # Эта архитектура
+    └── EPHEMERAL_DESIGN.md         # Детальная документация паттернов
 ```
 
-### Configuration Management
+### Configuration Management (Экспертный подход)
 
-**Global Configuration** (`~/.docker-ai-config/`):
+**Global Configuration** (`~/.docker-gemini-config/` или `~/.docker-ai-config/`):
 ```
-├── env                    # Environment variables
-├── settings.json          # Gemini settings
-├── claude_config.json     # Claude settings
-├── google_accounts.json   # OAuth tokens
-└── gh_config/            # GitHub CLI config
-```
-
-**Project State** (`<project>/.ai-state/`):
-```
-├── ssh_config_clean      # Sanitized SSH config
-├── google_accounts.json  # Project auth
-└── settings.json        # Project settings
+├── google_accounts.json           # OAuth токены
+├── settings.json                  # Gemini настройки
+├── claude_config.json             # Claude настройки
+├── gh_config/                     # GitHub CLI конфигурация
+└── global_state/                  # Глобальное состояние для non-git проектов
 ```
 
-### Security Architecture
+**Project State** (`<project>/.gemini-state/` или `<project>/.ai-state/`):
+```
+├── google_accounts.json           # Проект-specific аутентификация
+├── settings.json                  # Проект-specific настройки
+└── ssh_config_clean               # Очищенный SSH конфиг
+```
+
+### Security Architecture (Экспертный паттерн)
 
 **Zero Trust Implementation**:
-- Secrets never leave host disk
-- SSH agent forwarding only
-- Runtime environment isolation
-- Automatic .gitignore for state
+- Секреты никогда не покидают диск хоста
+- SSH agent forwarding (не ключи)
+- Изолированная среда выполнения контейнера
+- Автоматический .gitignore для состояния
 
-**SSH Sanitization**:
+**SSH Sanitization (экспертный подход)**:
 ```bash
-# Removed from SSH config for container compatibility
-- UseKeychain
-- AddKeysToAgent
-- IdentityFile
-- IdentitiesOnly
+# Удаляется из SSH конфига для совместимости с контейнером
+grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
 ```
 
-## 🔄 Data Flows
+## 🔄 Data Flows (Экспертные паттерны)
 
-### AI Session Flow
+### AI Session Flow (Эфемерный)
 
 ```mermaid
 sequenceDiagram
     participant User
     participant Shell
+    participant Config
     participant Docker
     participant Container
 
-    User->>Shell: gemini
+    User->>Shell: gemini (или claude)
     Shell->>Shell: ensure_docker_running()
     Shell->>Shell: ensure_ssh_loaded()
-    Shell->>Shell: sync_in_configs()
-    Shell->>Docker: docker run --rm
-    Docker->>Container: Start container
-    Container->>User: AI interface
-    User->>Container: Exit session
-    Container->>Shell: sync_out_configs()
+    Shell->>Config: sync_in_configs()
+    Shell->>Docker: docker run --rm claude-code-tools
+    Docker->>Container: Эфемерный запуск
+    Container->>User: AI интерфейс
+    User->>Container: Завершение сессии
+    Container->>Docker: Автоматическая очистка (--rm)
+    Config->>Config: sync_out_configs()
 ```
 
-### Configuration Sync Flow
+### Configuration Sync Flow (Экспертный)
 
 ```mermaid
 flowchart TD
     A[Global Config] --> B[Sync In]
     B --> C[Project State]
     C --> D[Container Mount]
-    D --> E[Runtime]
-    E --> F[Sync Out]
-    F --> G[Updated Global]
+    D --> E[Ephemeral Runtime]
+    E --> F[Container Cleanup --rm]
+    F --> G[Sync Out]
+    G --> H[Updated Global]
 
-    H[SSH Config] --> I[Sanitization]
-    I --> J[Clean Config]
-    J --> C
+    I[SSH Config] --> J[Sanitization]
+    J --> K[Clean Config]
+    K --> C
 ```
 
-## 🚀 Performance Considerations
+## 🚀 Performance Considerations (Экспертный подход)
 
-### Container Optimization
-
-**Build Optimization**:
-- Multi-stage builds for minimal image size
-- Layer caching for faster rebuilds
-- .dockerignore for context reduction
+### Container Optimization (Экспертный)
 
 **Runtime Optimization**:
-- --network host for optimal performance
-- Volume mounts for persistent state
-- Resource limits for multi-instance support
+- `--rm`: Автоматическая очистка ресурсов
+- `--network host`: Максимальная производительность
+- Минимальные volume mounts: только необходимые
+- Эфемерность = нет накопления мусора
 
-### Session Management
+**Resource Management**:
+- Никаких проблем с лимитами контейнеров
+- Автоматическая сборка мусора Docker
+- Постоянное освобождение ресурсов
+- Предсказуемое потребление памяти
 
-**Multi-Instance Architecture**:
-- Dynamic port allocation
-- Resource monitoring
-- Health checking
-- Auto-recovery mechanisms
+### Session Management (Упрощенное)
 
-## 🔮 Future Enhancements
+**Эфемерная архитектура**:
+- Никакого health monitoring
+- Никакого state tracking
+- Никакого auto-recovery
+- Простота и надежность
+
+## 🔍 Migration from Persistent to Ephemeral
+
+### Changes Required
+
+**1. ai-assistant.zsh**:
+```bash
+# Старый подход (удалить)
+# docker run -d --name persistent-container
+
+# Новый подход (реализовать)
+docker run --rm claude-code-tools "$@"
+```
+
+**2. ai-session-manager.sh**:
+```bash
+# Опционально: legacy support
+# Или полное удаление в пользу простых wrapper функций
+```
+
+**3. Configuration**:
+- Убрать persistent tracking
+- Упростить state management
+- Использовать экспертные паттерны из old-scripts/gemini.zsh
+
+## 🔮 Future Enhancements (Экспертный подход)
 
 ### Planned Features
 
-1. **Kubernetes Support**
-   - Pod-per-instance deployment
-   - Horizontal scaling
-   - Advanced scheduling
+1. **Enhanced AI Mode Detection**
+   - Автоматическое определение типа проекта
+   - Контекстные подсказки для разных языков
+   - Умные настройки по умолчанию
 
-2. **Plugin System**
-   - Hot-pluggable AI providers
-   - Custom tool integration
-   - Extension ecosystem
+2. **Configuration Profiles**
+   - Профили для разных типов проектов
+   - Team-specific конфигурации
+   - Environment-specific настройки
 
-3. **Advanced Monitoring**
-   - Prometheus metrics
-   - Grafana dashboards
-   - Alert management
+3. **Advanced Tool Integration**
+   - Интеграция с development tools
+   - Custom AI agents
+   - Workflow automation
 
-4. **Security Enhancements**
-   - mTLS encryption
-   - Key management integration
-   - Audit logging
+### Scalability Considerations (Экспертный)
 
-### Scalability Considerations
+**Текущие преимущества**:
+- Никаких проблем с масштабированием (эфемерность)
+- Простота деплоя
+- Предсказуемая производительность
+- Минимальные требования к ресурсам
 
-**Current Limitations**:
-- Single host deployment
-- Manual configuration management
-- Limited observability
-
-**Scalability Solutions**:
-- Distributed deployment patterns
-- Configuration as Code
-- Centralized monitoring
+**Будущие улучшения**:
+- Batch operations для множественных команд
+- Кэширование конфигураций
+- Параллельные операции
 
 ---
 
 ## 🏷️ Architecture Tags
 
 ```
-Type: TECHNICAL_ARCHITECTURE
-Scope: SYSTEM_DESIGN
-Version: 2.0
-Components: 7
-Patterns: 4
+Type: EPHEMERAL_ARCHITECTURE
+Scope: EXPERT_PATTERN_BASED
+Version: 3.0 (Ephemeral Redesign)
+Components: 5 (упрощено с 7)
+Patterns: 3 (Ephemeral, Sync-In/Out, Zero Trust)
 Security_Level: Zero_Trust
+Approach: Expert_Proven
 Last_Updated: 2025-12-11
+Based_On: old-scripts/gemini.zsh expert patterns
 ```

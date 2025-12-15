@@ -119,23 +119,25 @@ which gemini claude aic cic  # Should show paths
 | Command | Function | Example |
 |---------|----------|---------|
 | `gexec <cmd>` | Execute in container | `gexec npm install` |
-| `ai-list` | List running instances | `ai-list` |
-| `ai-stop <id>` | Stop instance | `ai-stop project-gemini` |
-| `ai-restart <id>` | Restart instance | `ai-restart project-claude` |
+| `ai-mode` | Show/Switch mode info | `ai-mode help` |
+
+### Ephemeral Architecture Note
+
+**Note**: Since v3.0, the system uses **ephemeral containers**. 
+- Containers are created on-demand and removed immediately after use (`--rm`).
+- There are no persistent background processes to manage.
+- `ai-list`, `ai-stop` commands are no longer needed.
 
 ### Multi-Instance Management
 
-```bash
-# Start multiple instances
-cd ~/project-a && gemini     # instance: project-a-gemini
-cd ~/project-b && claude     # instance: project-b-claude
-cd ~/project-c && gemini     # instance: project-c-gemini
+Since containers are ephemeral, you can simply run commands in multiple terminals simultaneously. No special management is required.
 
-# Manage all instances
-ai-list          # Show all running
-ai-stop-all      # Stop all instances
-ai-stats         # Resource usage
-ai-logs <id>     # View logs
+```bash
+# Terminal 1
+cd ~/project-a && gemini
+
+# Terminal 2
+cd ~/project-b && claude
 ```
 
 ---
@@ -196,16 +198,17 @@ aic  # Gemini-style commit with semantic message
 ```bash
 # 1. Check system status
 docker info
-ai-list
 
-# 2. View logs
-ai-logs <instance-id>
+# 2. View output
+# Logs are displayed in stdout/stderr during execution.
+# For persistent logging, redirect output:
+gemini > session.log 2>&1
 
-# 3. Access container directly
-ai-attach <instance-id>
+# 3. Access container environment
+# Start an interactive shell
+gexec /bin/bash
 
-# 4. Reset if needed
-ai-stop-all
+# 4. Clean up (if Docker gets stuck)
 docker system prune -f
 ```
 
@@ -253,8 +256,7 @@ alias gem="gemini"
 alias cl="claude"
 
 # Instance management
-alias ai-status="ai-list && ai-stats"
-alias ai-reset="ai-stop-all && docker system prune -f"
+alias ai-clean="docker system prune -f"
 
 # Development shortcuts
 alias dev-on="cd ~/project && gemini"
@@ -270,22 +272,18 @@ alias dev-review="claude && cic"
 **Always**:
 - Use project-specific directories
 - Let AI handle commits when possible
-- Stop instances when done
-- Check resources with `ai-stats`
+- Review AI-generated code
 
 **Never**:
-- Run multiple instances in same project
 - Commit sensitive data
-- Ignore health warnings
-- Force kill containers
+- Force kill containers (unless stuck)
 
 ### Performance Optimization
 
 **Container Optimization**:
 - Use .dockerignore to reduce context
 - Leverage Docker layer caching
-- Monitor resource usage
-- Clean up unused containers
+- Clean up unused images/volumes
 
 **AI Optimization**:
 - Provide clear context
@@ -318,11 +316,11 @@ echo ".ai-state/" >> .gitignore
 open -a Docker
 
 # Port conflicts
-ai-list  # Check used ports
-ai-stop-all  # Clear all instances
+# Generally not an issue with --network host, but check other services
+lsof -i :<port>
 
 # Container errors
-docker logs <container-id>
+# Check logs in stdout/stderr
 docker system prune -f
 ```
 

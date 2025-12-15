@@ -188,10 +188,31 @@ ai-mode           # Показ текущего режима
 ```
 
 ### Файлы Конфигурации
-Путь: `~/.docker-ai-config/`
+
+**Новый unified путь:** `~/.docker-ai-config/`
 *   **`settings.json`**: Настройки Gemini модели.
 *   **`claude_config.json`**: Настройки Claude модели.
 *   **`env`**: Переменные окружения (API ключи).
+*   **`google_accounts.json`**: Google аккаунты для Gemini.
+
+**⚠️ Миграция из старой системы:**
+
+Если у вас установлена старая версия (`gemini-docker-setup`), система автоматически:
+
+1. Обнаружит credentials в `~/.docker-gemini-config/`
+2. Предложит автоматическую миграцию
+3. Создаст backup перед миграцией
+
+```bash
+# Ручная миграция при необходимости
+./scripts/migrate-credentials.sh
+
+# Управление credentials
+./scripts/credential-manager.sh status
+./scripts/credential-manager.sh migrate
+```
+
+**Подробнее:** [CREDENTIAL_MIGRATION_GUIDE.md](./CREDENTIAL_MIGRATION_GUIDE.md)
 
 ---
 

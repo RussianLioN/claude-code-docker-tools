@@ -1,569 +1,485 @@
 #!/bin/zsh
 
-AI_TOOLS_HOME=${0:a:h}
-SESSION_MANAGER_SCRIPT="${AI_TOOLS_HOME}/scripts/ai-session-manager.sh"
+# AI Assistant zsh - Expert Ephemeral Container Implementation
+# Based on proven patterns from old-scripts/gemini.zsh
 
-# --- 1. SYSTEM CHECKS ---
+AI_TOOLS_HOME=${0:a:h}
+
+# Set configuration directories with fallback logic
+export DOCKER_AI_CONFIG_HOME="${HOME}/.docker-ai-config"
+export LEGACY_DOCKER_CONFIG_HOME="${HOME}/.docker-gemini-config"
+
+# Credential paths with fallback
+export GLOBAL_AUTH="$DOCKER_AI_CONFIG_HOME/google_accounts.json"
+export GLOBAL_SETTINGS="$DOCKER_AI_CONFIG_HOME/settings.json"
+export CLAUDE_CONFIG="$DOCKER_AI_CONFIG_HOME/claude_config.json"
+export GH_CONFIG_DIR="$DOCKER_AI_CONFIG_HOME/gh_config"
+
+# Check if migration is needed
+check_and_migrate_credentials() {
+  # Load credential manager
+  local credential_manager="${AI_TOOLS_HOME}/scripts/credential-manager.sh"
+
+  if [[ -f "$credential_manager" ]]; then
+    # Auto-migrate on first run
+    if [[ ! -f "$GLOBAL_AUTH" && -f "$LEGACY_DOCKER_CONFIG_HOME/google_accounts.json" ]]; then
+      echo "🔄 Обнаружены legacy credentials, выполняю миграцию..." >&2
+      "$credential_manager" migrate
+    fi
+  fi
+}
+
+# Create global config directory
+mkdir -p "$DOCKER_AI_CONFIG_HOME"
+mkdir -p "$GH_CONFIG_DIR"
+
+# Load environment variables if exist
+if [[ -f "$DOCKER_AI_CONFIG_HOME/env" ]]; then
+  source "$DOCKER_AI_CONFIG_HOME/env"
+fi
+
+# Auto-detect Trae IDE sandbox mode
+if [[ ! -w "$(dirname "$DOCKER_AI_CONFIG_HOME")" ]]; then
+  export TRAE_SANDBOX_MODE=1
+  echo "🔒 Обнаружен Trae IDE sandbox режим" >&2
+fi
+
+# --- 1. EXPERT SYSTEM CHECKS ---
 
 function ensure_docker_running() {
-  if ! docker info > /dev/null 2>&1; then
+  # Enhanced Docker detection with Colima support (expert pattern)
+  if [[ "$OSTYPE" == "darwin"* ]] && command -v colima >/dev/null 2>&1; then
+    if ! colima status >/dev/null 2>&1; then
+      echo "🚀 Запускаю Colima..." >&2
+      colima start --cpu 2 --memory 4 --disk 60
+    fi
+    export DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock"
+  elif ! docker info > /dev/null 2>&1; then
     echo "🐳 Docker не запущен. Запускаю..." >&2
+    echo "⏳ Это может занять 30-90 секунд для полной инициализации" >&2
     open -a Docker
-    while ! docker info > /dev/null 2>&1; do sleep 1; done
+
+    # Увеличенный таймаут для Docker Desktop
+    local max_wait=120
+    local wait_time=0
+    echo -n "  Ожидаю Docker daemon" >&2
+    while ! docker info >/dev/null 2>&1 && [[ $wait_time -lt $max_wait ]]; do
+      sleep 2
+      ((wait_time++))
+      echo -n "." >&2
+      if (( wait_time % 10 == 0 )); then
+        echo " (${wait_time}s/${max_wait}s)" >&2
+        echo -n "  Все еще жду" >&2
+      fi
+    done
+    echo "" >&2
+
+    # Дополнительное ожидание для UI инициализации
+    if docker info >/dev/null 2>&1; then
+      echo -n "  Ожидаю инициализации Docker Desktop" >&2
+      local ui_wait=0
+      local max_ui_wait=30
+      while [[ $ui_wait -lt $max_ui_wait ]]; do
+        if docker version >/dev/null 2>&1 && docker ps >/dev/null 2>&1; then
+          break
+        fi
+        sleep 1
+        ((ui_wait++))
+        echo -n "." >&2
+      done
+      echo "" >&2
+    fi
     echo "✅ Docker готов!" >&2
   fi
 }
 
 function ensure_ssh_loaded() {
-  # Проверяем, есть ли ключи в агенте
+  # Expert SSH agent management pattern
   if ! ssh-add -l > /dev/null 2>&1; then
-    # Если пусто - пробуем восстановить из Keychain
     ssh-add --apple-load-keychain > /dev/null 2>&1
-    
-    # Если все еще пусто
     if ! ssh-add -l > /dev/null 2>&1; then
-       echo "⚠️  Внимание: SSH-агент пуст. Git внутри контейнера может не работать." >&2
+       echo "⚠️  Внимание: SSH-агент пуст. Git операции могут не работать." >&2
     fi
   fi
 }
 
-function check_ai_update() {
-  # Проверяем пинг (быстрый тест)
-  if ping -c 1 -W 100 8.8.8.8 &> /dev/null; then
-    local CURRENT_VER=$(docker run --rm --entrypoint gemini claude-code-tools --version 2>/dev/null)
-    local LATEST_VER=$(curl -m 3 -s https://registry.npmjs.org/@google/gemini-cli/latest | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
-    
-    if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
-      echo "✨ \033[1;35mДоступно обновление Gemini CLI:\033[0m $CURRENT_VER -> $LATEST_VER" >&2
-      echo "📦 Пересборка образа..." >&2
-      docker build --build-arg GEMINI_VERSION=$LATEST_VER -t claude-code-tools "$AI_TOOLS_HOME" >&2
-      echo "✅ Готово." >&2
+function check_updates() {
+  # Expert update checking pattern
+  if [[ "$1" == "interactive" ]]; then
+    if ping -c 1 -W 100 8.8.8.8 &> /dev/null; then
+      local CURRENT_VER=$(docker run --rm --entrypoint gemini claude-code-tools --version 2>/dev/null)
+      local LATEST_VER=$(curl -m 3 -s https://registry.npmjs.org/@google/gemini-cli/latest | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
+
+      if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
+        echo "✨ \033[1;35mДоступно обновление Gemini CLI:\033[0m $CURRENT_VER -> $LATEST_VER" >&2
+        echo "📦 Для обновления выполните: docker build --build-arg GEMINI_VERSION=$LATEST_VER -t claude-code-tools $AI_TOOLS_HOME" >&2
+      fi
     fi
   fi
 }
 
-function check_claude_update() {
-  if ping -c 1 -W 100 8.8.8.8 &> /dev/null; then
-    echo "🔍 Проверка обновлений Claude Code..." >&2
-    # Здесь можно добавить проверку Claude CLI версии
-  fi
-}
+# --- 2. EXPERT CONFIGURATION SYNC PATTERNS ---
 
-# --- 2. MAIN WRAPPER ---
-
-# --- 3. CLAUDE MODE ---
-
-function claude() {
-  local session_name=""
-  local use_session=false
-
-  # Parse arguments
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --session|-s)
-        use_session=true
-        session_name="${2:-}"
-        shift 2
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
-
-  if [[ "$use_session" == "true" ]]; then
-    if [[ -z "$session_name" ]]; then
-      echo "❌ Имя сессии требуется при использовании --session"
-      return 1
-    fi
-
-    # Start session if not running
-    local session_status=$(ai-session status 2>/dev/null | grep "Running Instances" | awk '{print $3}')
-    if [[ -z "$session_status" ]] || [[ "$session_status" == "0" ]]; then
-      echo "🚀 Запуск сессии '$session_name' для Claude..."
-      ai-session start "$session_name"
-    fi
-
-    echo "🔗 Claude работает в сессии: $session_name"
-  fi
-
-  # Original claude function logic
-  ensure_docker_running
-  ensure_ssh_loaded
-
+function prepare_configuration() {
+  # Check and migrate credentials if needed
+  # check_and_migrate_credentials  <-- DISABLED to prevent restoring bad credentials
+  
+  # Expert sync-in pattern based on old-scripts/gemini.zsh
   local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  local TARGET_DIR
-  local STATE_DIR
-  local CLAUDE_CONFIG="$HOME/.docker-ai-config/claude_config.json"
-  local GH_CONFIG_DIR="$HOME/.docker-ai-config/gh_config"
-  local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
-  local GIT_CONFIG="$HOME/.gitconfig"
-  local SSH_CONFIG_SRC="$HOME/.ssh/config"
-
-  local IS_INTERACTIVE=false
-  local DOCKER_FLAGS="-i"
-
-  if [ -t 1 ] && [ -z "$1" ]; then
-    DOCKER_FLAGS="-it"
-    IS_INTERACTIVE=true
-  fi
-
-  if [[ "$IS_INTERACTIVE" == "true" ]]; then
-    check_claude_update
-  fi
 
   if [[ -n "$GIT_ROOT" ]]; then
-    TARGET_DIR="$GIT_ROOT"
-    STATE_DIR="$GIT_ROOT/.ai-state"
+    export TARGET_DIR="$GIT_ROOT"
+    export STATE_DIR="$GIT_ROOT/.ai-state"
   else
-    TARGET_DIR="$(pwd)"
-    STATE_DIR="$HOME/.docker-ai-config/global_state"
+    export TARGET_DIR="$(pwd)"
+    export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state"
   fi
+  
+  # Unified state directory for Claude within the project or global state
+  export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
 
   local PROJECT_NAME=$(basename "$TARGET_DIR")
-  local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
+  export CONTAINER_WORKDIR="/app/$PROJECT_NAME"
 
   mkdir -p "$STATE_DIR"
   mkdir -p "$GH_CONFIG_DIR"
-  touch "$SSH_KNOWN_HOSTS"
+  mkdir -p "$CLAUDE_STATE_DIR"
 
-  # SSH Sanitization
-  local SSH_CONFIG_CLEAN="$STATE_DIR/ssh_config_clean"
+  # SSH Configuration Sanitization (expert pattern)
+  local SSH_CONFIG_SRC="$HOME/.ssh/config"
+  export SSH_CONFIG_CLEAN="$STATE_DIR/ssh_config_clean"
   if [[ -f "$SSH_CONFIG_SRC" ]]; then
     grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
   else
     touch "$SSH_CONFIG_CLEAN"
   fi
 
-  # Claude конфигурация
-  if [[ -f "$CLAUDE_CONFIG" ]]; then cp "$CLAUDE_CONFIG" "$STATE_DIR/claude_config.json"; fi
-
-  # Add session info to container
-  local SESSION_ENV=""
-  if [[ "$use_session" == "true" ]]; then
-    SESSION_ENV="-e AI_SESSION_NAME=$session_name"
+  # Sync-in configuration files
+  if [[ -f "$GLOBAL_AUTH" ]]; then
+    cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"
   fi
 
-  docker run $DOCKER_FLAGS --rm \
-    --network host \
-    $SESSION_ENV \
-    -e AI_MODE=claude \
-    -e CLAUDE_API_KEY="${CLAUDE_API_KEY:-}" \
-    -e CLAUDE_MODEL="${CLAUDE_MODEL:-claude-3-5-sonnet-20241022}" \
-    -e CLAUDE_MAX_TOKENS="${CLAUDE_MAX_TOKENS:-4096}" \
-    -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
-    -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
-    -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
-    -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
-    -v "${GIT_CONFIG}":/root/.gitconfig \
-    -v "${GH_CONFIG_DIR}":/root/.config/gh \
-    -w "${CONTAINER_WORKDIR}" \
-    -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
-    -v "${STATE_DIR}":/root/.ai \
-    claude-code-tools "$@"
+  if [[ -f "$GLOBAL_SETTINGS" ]]; then
+    cp "$GLOBAL_SETTINGS" "$STATE_DIR/settings.json"
+  fi
 
-  if [[ "$IS_INTERACTIVE" == "true" && -n "$GIT_ROOT" ]]; then
-    echo -e "\n👋 Сеанс Claude завершен."
-    cic  # Claude AI Commit
+  if [[ -f "$CLAUDE_CONFIG" ]]; then
+    cp "$CLAUDE_CONFIG" "$STATE_DIR/claude_config.json"
+  fi
+
+  # Load Claude API key if available
+  if [[ -f "$STATE_DIR/claude.env" ]]; then
+    source "$STATE_DIR/claude.env"
+  fi
+
+  # SSH known hosts
+  export SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
+  touch "$SSH_KNOWN_HOSTS"
+
+  # Git config
+  export GIT_CONFIG="$HOME/.gitconfig"
+  touch "$GIT_CONFIG"
+}
+
+function cleanup_configuration() {
+  # Expert sync-out pattern with sandbox detection
+  if [[ -n "$TRAE_SANDBOX_MODE" || ! -w "$(dirname "$GLOBAL_AUTH")" ]]; then
+    # Trae IDE sandbox mode - skip sync-out to avoid permission errors
+    echo "📦 Sandbox режим: пропускаю синхронизацию конфигурации" >&2
+    return 0
+  fi
+  
+  # Standard sync-out pattern
+  if [[ -f "$STATE_DIR/google_accounts.json" ]]; then
+    cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH" 2>/dev/null || true
+  fi
+
+  if [[ -f "$STATE_DIR/settings.json" ]]; then
+    cp "$STATE_DIR/settings.json" "$GLOBAL_SETTINGS" 2>/dev/null || true
+  fi
+
+  if [[ -f "$STATE_DIR/claude_config.json" ]]; then
+    cp "$STATE_DIR/claude_config.json" "$CLAUDE_CONFIG" 2>/dev/null || true
+  fi
+  
+  # Sync-out Claude State (Expert Pattern: Manual Copy due to bind mount issues)
+  # We use a temporary container to copy files from the volume/directory if needed,
+  # but since we bind mount, we expect persistence.
+  # If bind mount fails (as seen), we can't easily "copy out" from a dead container unless we kept it running.
+  # STRATEGY CHANGE: We will rely on bind mounts but ensure the directory exists and has correct permissions.
+  # If bind mount is absolutely broken in this env, we need to use 'docker cp' before removing the container.
+}
+
+# --- 3. EXPERT EPHEMERAL CONTAINER EXECUTION ---
+
+function run_ephemeral_container() {
+  local command="$1"
+  shift
+
+  # Expert Docker flags pattern
+  local DOCKER_FLAGS="-i"
+  if [ -t 1 ] && [ -z "$1" ]; then
+    DOCKER_FLAGS="-it"
+  fi
+
+  # Smart image selection for AI providers
+  local ai_image="claude-code-tools"
+  # We use the unified image for both modes now
+  
+  # Ensure variables are set
+  if [[ -z "${TARGET_DIR}" || -z "${CONTAINER_WORKDIR}" || -z "${STATE_DIR}" ]]; then
+    echo "❌ Ошибка: переменные не установлены. Вызовите prepare_configuration() сначала." >&2
+    return 1
+  fi
+
+  # Expert container execution pattern from old-scripts/gemini.zsh
+  # Use direct entrypoint to bypass entrypoint.sh for system commands
+  if [[ "$command" == "/bin/sh" || "$command" == "sh" || "$command" == "bash" || "$command" == "/bin/bash" ]]; then
+    # DEBUG: Show command and env vars
+    # echo "DEBUG: Running docker with project_id=$project_id" >&2
+    # echo "DEBUG: Env vars: ${env_vars[@]}" >&2
+    
+    docker run $DOCKER_FLAGS --name "claude-session-$(date +%s)" \
+      --entrypoint "$command" \
+      --network host \
+      -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
+      -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+      -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
+      -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
+      -v "${GIT_CONFIG}":/root/.gitconfig \
+      -v "${GIT_CONFIG}":/root/.gitconfig \
+      -v "${GH_CONFIG_DIR}":/root/.config/gh \
+      -v "${CLAUDE_STATE_DIR}":/root/.claude-config \
+      -w "${CONTAINER_WORKDIR}" \
+      -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+      -v "${STATE_DIR}":/root/.gemini \
+      "$ai_image" "$@"
+  else
+    # Set AI_MODE environment variable for proper provider selection
+    local -a env_vars
+    # Fix for ETIMEDOUT: Force IPv4 for Node.js applications (Claude & Gemini)
+    env_vars+=("-e" "NODE_OPTIONS=--dns-result-order=ipv4first")
+
+    if [[ "$command" == "claude" ]]; then
+      env_vars+=("-e" "AI_MODE=claude")
+      # Pass Claude API key if available
+      if [[ -n "$CLAUDE_API_KEY" ]]; then
+        env_vars+=("-e" "CLAUDE_API_KEY=$CLAUDE_API_KEY")
+      fi
+    elif [[ "$command" == "gemini" ]]; then
+      env_vars=()
+    fi
+    
+    # Set GOOGLE_CLOUD_PROJECT
+    local project_id="${GOOGLE_CLOUD_PROJECT:-claude-code-docker-tools}"
+    if [[ -n "$project_id" ]]; then
+      env_vars+=("-e" "GOOGLE_CLOUD_PROJECT=$project_id")
+    fi
+    
+    local container_name="claude-session-$(date +%s)"
+    local container_hostname="claude-dev-env"
+    
+    docker run $DOCKER_FLAGS --name "$container_name" \
+      --hostname "$container_hostname" \
+      --network host \
+      "${env_vars[@]}" \
+      -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
+      -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+      -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
+      -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
+      -v "${GIT_CONFIG}":/root/.gitconfig \
+      -v "${GH_CONFIG_DIR}":/root/.config/gh \
+      -v "${CLAUDE_STATE_DIR}":/root/.claude-config \
+      -w "${CONTAINER_WORKDIR}" \
+      -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
+      -v "${STATE_DIR}":/root/.gemini \
+      "$ai_image" "$@"
+      
+    local exit_code=$?
+    
+    # Expert Sync-Out: Manually copy config back to host
+    # This bypasses bind mount issues by explicitly copying files
+    if [[ "$command" == "claude" ]]; then
+      echo "💾 Сохранение сессии Claude..." >&2
+      mkdir -p "$CLAUDE_STATE_DIR"
+      # Ensure destination directory has write permissions
+      chmod 755 "$CLAUDE_STATE_DIR" 2>/dev/null || true
+      
+      # Copy content of .claude-config to host state dir
+      # Note: using /. to copy contents, not directory itself
+      if docker cp "$container_name":/root/.claude-config/. "$CLAUDE_STATE_DIR/" >/dev/null 2>&1; then
+         echo "✅ Сессия успешно сохранена в $CLAUDE_STATE_DIR" >&2
+      else
+         echo "⚠️ Ошибка сохранения сессии. Проверьте права доступа." >&2
+         # Try to copy individual files if bulk copy fails
+         docker cp "$container_name":/root/.claude-config/.credentials.json "$CLAUDE_STATE_DIR/" >/dev/null 2>&1
+      fi
+    fi
+    
+    # Cleanup container
+    # DEBUG MODE: Disabled. Production behavior restored.
+    docker rm -f "$container_name" >/dev/null 2>&1
+    # echo "🐞 DEBUG: Контейнер сохранен для отладки: $container_name" >&2
+    # echo "   Для входа: docker exec -it $container_name /bin/bash" >&2
+    # echo "   Для удаления: docker rm -f $container_name" >&2
+     
+    return $exit_code
   fi
 }
 
-# --- 4. GEXEC ---
+# --- 4. EXPERT AI WRAPPER FUNCTIONS ---
+
+function gemini() {
+  ensure_docker_running
+  ensure_ssh_loaded
+  prepare_configuration
+
+  local is_interactive=false
+  if [ -t 1 ] && [ -z "$1" ]; then
+    is_interactive=true
+  fi
+
+  # Check updates only in interactive mode
+  if [[ "$is_interactive" == "true" ]]; then
+    check_updates "interactive"
+  fi
+
+  run_ephemeral_container gemini "$@"
+  local exit_code=$?
+
+  cleanup_configuration
+
+  if [[ "$is_interactive" == "true" && -n "$GIT_ROOT" ]]; then
+    echo -e "\n👋 Сеанс Gemini завершен." >&2
+  fi
+
+  return $exit_code
+}
+
+function claude() {
+  ensure_docker_running
+  ensure_ssh_loaded
+  prepare_configuration
+
+  local is_interactive=false
+  if [ -t 1 ] && [ -z "$1" ]; then
+    is_interactive=true
+  fi
+
+  run_ephemeral_container claude "$@"
+  local exit_code=$?
+
+  cleanup_configuration
+
+  if [[ "$is_interactive" == "true" && -n "$GIT_ROOT" ]]; then
+    echo -e "\n👋 Сеанс Claude завершен." >&2
+  fi
+
+  return $exit_code
+}
+
+# --- 5. EXPERT AI COMMIT FUNCTIONS ---
+
+function aic() {
+  echo "🤖 Gemini AI Commit (DevOps стиль)" >&2
+  gemini commit "$@"
+}
+
+function cic() {
+  echo "🤖 Claude AI Commit (SE стиль)" >&2
+  claude commit "$@"
+}
+
+# --- 6. EXPERT SYSTEM OPERATIONS ---
 
 function gexec() {
   ensure_docker_running
-  ensure_ssh_loaded
+  prepare_configuration
 
-  local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  local TARGET_DIR
-  if [[ -n "$GIT_ROOT" ]]; then TARGET_DIR="$GIT_ROOT"; else TARGET_DIR="$(pwd)"; fi
-  
-  local PROJECT_NAME=$(basename "$TARGET_DIR")
-  local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
-  
-  local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
-  local GIT_CONFIG="$HOME/.gitconfig"
-  local GH_CONFIG_DIR="$HOME/.docker-ai-config/gh_config"
-  local SSH_CONFIG_SRC="$HOME/.ssh/config"
-  local TMP_DIR="$HOME/.docker-ai-config/tmp_exec"
-  mkdir -p "$TMP_DIR"
-  local SSH_CONFIG_CLEAN="$TMP_DIR/ssh_config_clean"
-  
-  if [[ -f "$SSH_CONFIG_SRC" ]]; then
-    grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
+  echo "🔧 Выполнение команды в AI окружении: $*" >&2
+
+  # Special handling for shell commands - use /bin/sh
+  if [[ "$1" == "/bin/sh" || "$1" == "sh" || "$1" == "bash" ]]; then
+    run_ephemeral_container "$@"
+    local exit_code=$?
   else
-    touch "$SSH_CONFIG_CLEAN"
+    # Default: execute as shell command
+    run_ephemeral_container /bin/sh -c "$*"
+    local exit_code=$?
   fi
 
-  docker run -it --rm \
-    --entrypoint "" \
-    --network host \
-    -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
-    -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
-    -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
-    -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
-    -v "${GIT_CONFIG}":/root/.gitconfig \
-    -v "${GH_CONFIG_DIR}":/root/.config/gh \
-    -w "${CONTAINER_WORKDIR}" \
-    -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
-    claude-code-tools "$@"
+  cleanup_configuration
+  return $exit_code
 }
-
-# --- 5. AIC (Gemini AI Commit) ---
-
-function aic() {
-  ensure_docker_running
-  ensure_ssh_loaded
-
-  local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  if [[ -z "$GIT_ROOT" ]]; then echo "❌ Не git-репозиторий"; return 1; fi
-  
-  cd "$GIT_ROOT"
-  
-  if ! grep -q ".ai-state" .gitignore 2>/dev/null; then
-    echo "🛡  Безопасность: Добавляю .ai-state в .gitignore..."
-    echo "" >> .gitignore
-    echo "# AI Assistant State" >> .gitignore
-    echo ".ai-state/" >> .gitignore
-  fi
-  
-  git add .
-  
-  if ! git diff --staged --quiet; then
-    local LOG_CONTENT=$(git log -n 10 --pretty=format:"%h | %an | %s")
-    local DIFF_CONTENT=$(git diff --staged | head -c 100000)
-    
-    echo "🤖 Gemini анализирует изменения..." >&2
-    
-    local PROMPT="Act as a Senior DevOps Engineer.
-    
-    CONTEXT PART 1 (Project History):
-    $LOG_CONTENT
-    
-    CONTEXT PART 2 (Current Changes):
-    $DIFF_CONTENT
-    
-    TASK:
-    Write a semantic Conventional Commit message for the changes in PART 2.
-    Match the style of PART 1.
-    Output ONLY the raw commit message string. No markdown, no quotes."
-    
-    local MSG=$(gemini "$PROMPT" | sed 's/```//g' | sed 's/"//g' | tr -d '\r')
-    MSG=$(echo "$MSG" | sed -e 's/^[[:space:]]*//')
-
-    echo -e "\n📝 \033[1;32mПредложенный коммит:\033[0m"
-    echo "---------------------------------------------------"
-    echo "$MSG"
-    echo "---------------------------------------------------"
-    
-    echo "🚀 Действия: [Enter]=Push, [c]=Commit, [n]=Cancel"
-    echo -n "Ваш выбор: "
-    read ACTION
-    ACTION=${ACTION:-y}
-
-    if [[ "$ACTION" == "y" || "$ACTION" == "Y" ]]; then
-      git commit -m "$MSG"
-      echo "☁️ Auto-Push..."
-      
-      local REMOTE_URL=$(git config --get remote.origin.url)
-      if [[ "$REMOTE_URL" == https* ]]; then
-         echo "⚠️  HTTPS Remote detected. Auth may fail inside Docker." >&2
-      fi
-      
-      gexec git push
-    elif [[ "$ACTION" == "c" || "$ACTION" == "C" ]]; then
-      git commit -m "$MSG"
-      echo "✅ Saved locally."
-    else
-      echo "❌ Cancelled."
-    fi
-    return
-  fi
-
-  local UNPUSHED_COUNT=$(git log @{u}..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
-  if [[ "$UNPUSHED_COUNT" -gt 0 ]]; then
-    echo -e "\n⚡️ \033[1;33mОбнаружено $UNPUSHED_COUNT неотправленных коммитов.\033[0m"
-    git log @{u}..HEAD --oneline --color | head -n 5
-    echo -n "🚀 Выполнить git push сейчас? [Y/n]: "
-    read PUSH_CONFIRM
-    PUSH_CONFIRM=${PUSH_CONFIRM:-y}
-    if [[ "$PUSH_CONFIRM" == "y" || "$PUSH_CONFIRM" == "Y" ]]; then echo "☁️ Pushing..."; gexec git push; else echo "🏠 Оставлено локально."; fi
-  fi
-}
-
-# --- 6. CIC (Claude AI Commit) ---
-
-function cic() {
-  ensure_docker_running
-  ensure_ssh_loaded
-
-  local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  if [[ -z "$GIT_ROOT" ]]; then echo "❌ Не git-репозиторий"; return 1; fi
-  
-  cd "$GIT_ROOT"
-  
-  if ! grep -q ".ai-state" .gitignore 2>/dev/null; then
-    echo "🛡  Безопасность: Добавляю .ai-state в .gitignore..."
-    echo "" >> .gitignore
-    echo "# AI Assistant State" >> .gitignore
-    echo ".ai-state/" >> .gitignore
-  fi
-  
-  git add .
-  
-  if ! git diff --staged --quiet; then
-    local LOG_CONTENT=$(git log -n 10 --pretty=format:"%h | %an | %s")
-    local DIFF_CONTENT=$(git diff --staged | head -c 100000)
-    
-    echo "🤖 Claude анализирует изменения..." >&2
-    
-    local PROMPT="Act as a Senior Software Engineer specializing in modern development practices.
-    
-    CONTEXT PART 1 (Project History):
-    $LOG_CONTENT
-    
-    CONTEXT PART 2 (Current Changes):
-    $DIFF_CONTENT
-    
-    TASK:
-    Write a clear, descriptive commit message following conventional commit format.
-    Focus on what changed and why, using the style from PART 1.
-    Output ONLY the raw commit message. No markdown formatting, no quotes."
-    
-    local MSG=$(claude "$PROMPT" | sed 's/```//g' | sed 's/"//g' | tr -d '\r')
-    MSG=$(echo "$MSG" | sed -e 's/^[[:space:]]*//')
-
-    echo -e "\n📝 \033[1;34mПредложенный коммит (Claude):\033[0m"
-    echo "---------------------------------------------------"
-    echo "$MSG"
-    echo "---------------------------------------------------"
-    
-    echo "🚀 Действия: [Enter]=Push, [c]=Commit, [n]=Cancel"
-    echo -n "Ваш выбор: "
-    read ACTION
-    ACTION=${ACTION:-y}
-
-    if [[ "$ACTION" == "y" || "$ACTION" == "Y" ]]; then
-      git commit -m "$MSG"
-      echo "☁️ Auto-Push..."
-      
-      local REMOTE_URL=$(git config --get remote.origin.url)
-      if [[ "$REMOTE_URL" == https* ]]; then
-         echo "⚠️  HTTPS Remote detected. Auth may fail inside Docker." >&2
-      fi
-      
-      gexec git push
-    elif [[ "$ACTION" == "c" || "$ACTION" == "C" ]]; then
-      git commit -m "$MSG"
-      echo "✅ Saved locally."
-    else
-      echo "❌ Cancelled."
-    fi
-    return
-  fi
-
-  local UNPUSHED_COUNT=$(git log @{u}..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
-  if [[ "$UNPUSHED_COUNT" -gt 0 ]]; then
-    echo -e "\n⚡️ \033[1;33mОбнаружено $UNPUSHED_COUNT неотправленных коммитов.\033[0m"
-    git log @{u}..HEAD --oneline --color | head -n 5
-    echo -n "🚀 Выполнить git push сейчас? [Y/n]: "
-    read PUSH_CONFIRM
-    PUSH_CONFIRM=${PUSH_CONFIRM:-y}
-    if [[ "$PUSH_CONFIRM" == "y" || "$PUSH_CONFIRM" == "Y" ]]; then echo "☁️ Pushing..."; gexec git push; else echo "🏠 Оставлено локально."; fi
-  fi
-}
-
-# --- 7. AI MODE SWITCHER ---
 
 function ai-mode() {
-  case "$1" in
-    gemini|g)
-      echo "🧠 Переключение в Gemini режим"
-      export AI_CURRENT_MODE="gemini"
+  local mode="${1:-}"
+
+  case "$mode" in
+    "gemini"|"g")
+      echo "🧠 Переключаюсь в Gemini режим" >&2
+      echo "Используйте: gemini [команда]" >&2
       ;;
-    claude|c)
-      echo "🤖 Переключение в Claude режим"
-      export AI_CURRENT_MODE="claude"
+    "claude"|"c")
+      echo "🤖 Переключаюсь в Claude режим" >&2
+      echo "Используйте: claude [команда]" >&2
       ;;
-    "")
-      echo "Текущий режим: ${AI_CURRENT_MODE:-gemini}"
-      echo "Доступные режимы: gemini, claude"
+    "help"|"-h"|"--help"|"")
+      echo "AI Assistant - Двойной режим работы" >&2
+      echo "" >&2
+      echo "Доступные режимы:" >&2
+      echo "  gemini     🧠 Gemini AI Assistant" >&2
+      echo "  claude     🤖 Claude Code Assistant" >&2
+      echo "" >&2
+      echo "AI коммиты:" >&2
+      echo "  aic        Gemini AI Commit" >&2
+      echo "  cic        Claude AI Commit" >&2
+      echo "" >&2
+      echo "Системные команды:" >&2
+      echo "  gexec      Выполнить в AI окружении" >&2
+      echo "" >&2
+      echo "Примеры:" >&2
+      echo "  gemini              # Интерактивный режим" >&2
+      echo "  gemini 'help me'    # Команда с аргументом" >&2
+      echo "  aic                 # AI коммит через Gemini" >&2
+      echo "  gexec 'npm test'    # Выполнить в контейнере" >&2
       ;;
     *)
-      echo "Неизвестный режим: $1"
-      echo "Доступные: gemini, claude"
+      echo "❌ Неизвестный режим: $mode" >&2
+      echo "Используйте: ai-mode [gemini|claude|help]" >&2
+      return 1
       ;;
   esac
 }
 
-# --- 8. SESSION MANAGEMENT ---
+# --- 7. LEGACY SUPPORT (DEPRECATED) ---
 
-function ai-session() {
-  if [[ ! -f "$SESSION_MANAGER_SCRIPT" ]]; then
-    echo "❌ Session Manager not found: $SESSION_MANAGER_SCRIPT"
-    return 1
-  fi
-
-  "$SESSION_MANAGER_SCRIPT" "$@"
+function ai-session-manager() {
+  echo "⚠️  ВНИМАНИЕ: ai-session-manager УСТАРЕЛ" >&2
+  echo "✅ Используйте простые команды:" >&2
+  echo "   • gemini     - для Gemini AI" >&2
+  echo "   • claude     - для Claude AI" >&2
+  echo "   • aic/cic    - для AI коммитов" >&2
+  echo "   • gexec      - для команд в AI окружении" >&2
+  echo "" >&2
+  echo "Подробнее: ai-mode help" >&2
+  return 1
 }
 
-function ai-start() {
-  local session_name="${1:-}"
-  if [[ -z "$session_name" ]]; then
-    echo "Использование: ai-start <имя-сессии>"
-    return 1
-  fi
+# --- 8. INITIALIZATION ---
 
-  ai-session start "$session_name"
-}
+# Auto-completion
+if [[ -n "$BASH_VERSION" ]]; then
+  complete -W "gemini claude aic cic gexec ai-mode" ai-assistant 2>/dev/null || true
+elif [[ -n "$ZSH_VERSION" ]]; then
+  compdef _ai_assistant_completion gemini claude aic cic gexec ai-mode 2>/dev/null || true
+fi
 
-function ai-stop() {
-  local session_name="${1:-}"
-  if [[ -z "$session_name" ]]; then
-    echo "Использование: ai-stop <имя-сессии>"
-    return 1
-  fi
+# Ensure we're in proper directory
+cd "$AI_TOOLS_HOME" 2>/dev/null || true
 
-  ai-session stop "$session_name"
-}
-
-function ai-list() {
-  ai-session list
-}
-
-function ai-status() {
-  ai-session status
-}
-
-function ai-restart() {
-  local session_name="${1:-}"
-  if [[ -z "$session_name" ]]; then
-    echo "Использование: ai-restart <имя-сессии>"
-    return 1
-  fi
-
-  ai-session restart "$session_name"
-}
-
-function ai-cleanup() {
-  ai-session cleanup
-}
-
-# Enhanced gemini/claude functions with session support
-function gemini() {
-  local session_name=""
-  local use_session=false
-
-  # Parse arguments
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --session|-s)
-        use_session=true
-        session_name="${2:-}"
-        shift 2
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
-
-  if [[ "$use_session" == true ]]; then
-    if [[ -z "$session_name" ]]; then
-      echo "❌ Имя сессии требуется при использовании --session"
-      return 1
-    fi
-
-    # Start session if not running
-    local session_status=$(ai-session status 2>/dev/null | grep "Running Instances" | awk '{print $3}')
-    if [[ -z "$session_status" ]] || [[ "$session_status" == "0" ]]; then
-      echo "🚀 Запуск сессии '$session_name' для Gemini..."
-      ai-session start "$session_name"
-    fi
-
-    echo "🔗 Gemini работает в сессии: $session_name"
-  fi
-
-  # Original gemini function logic
-  ensure_docker_running
-  ensure_ssh_loaded
-
-  local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  local TARGET_DIR
-  local STATE_DIR
-  local GLOBAL_AUTH="$HOME/.docker-ai-config/google_accounts.json"
-  local GLOBAL_SETTINGS="$HOME/.docker-ai-config/settings.json"
-  local CLAUDE_CONFIG="$HOME/.docker-ai-config/claude_config.json"
-  local GH_CONFIG_DIR="$HOME/.docker-ai-config/gh_config"
-  local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
-  local GIT_CONFIG="$HOME/.gitconfig"
-  local SSH_CONFIG_SRC="$HOME/.ssh/config"
-
-  local IS_INTERACTIVE=false
-  local DOCKER_FLAGS="-i"
-
-  if [ -t 1 ] && [ -z "$1" ]; then
-    DOCKER_FLAGS="-it"
-    IS_INTERACTIVE=true
-  fi
-
-  # ИСПРАВЛЕНИЕ: Проверка обновлений ТОЛЬКО в интерактивном режиме
-  if [[ "$IS_INTERACTIVE" == "true" ]]; then
-    check_ai_update
-  fi
-
-  if [[ -n "$GIT_ROOT" ]]; then
-    TARGET_DIR="$GIT_ROOT"
-    STATE_DIR="$GIT_ROOT/.ai-state"
-  else
-    TARGET_DIR="$(pwd)"
-    STATE_DIR="$HOME/.docker-ai-config/global_state"
-  fi
-
-  local PROJECT_NAME=$(basename "$TARGET_DIR")
-  local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
-
-  mkdir -p "$STATE_DIR"
-  mkdir -p "$GH_CONFIG_DIR"
-  touch "$SSH_KNOWN_HOSTS"
-
-  # SSH Sanitization
-  local SSH_CONFIG_CLEAN="$STATE_DIR/ssh_config_clean"
-  if [[ -f "$SSH_CONFIG_SRC" ]]; then
-    grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
-  else
-    touch "$SSH_CONFIG_CLEAN"
-  fi
-
-  if [[ -f "$GLOBAL_AUTH" ]]; then cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"; fi
-  if [[ -f "$GLOBAL_SETTINGS" ]]; then cp "$GLOBAL_SETTINGS" "$STATE_DIR/settings.json"; fi
-
-  # Add session info to container
-  local SESSION_ENV=""
-  if [[ "$use_session" == true ]]; then
-    SESSION_ENV="-e AI_SESSION_NAME=$session_name"
-  fi
-
-  docker run $DOCKER_FLAGS --rm \
-    --network host \
-    $SESSION_ENV \
-    -e GOOGLE_CLOUD_PROJECT=gemini-cli-auth-478707 \
-    -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
-    -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
-    -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
-    -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
-    -v "${GIT_CONFIG}":/root/.gitconfig \
-    -v "${GH_CONFIG_DIR}":/root/.config/gh \
-    -w "${CONTAINER_WORKDIR}" \
-    -v "${TARGET_DIR}":"${CONTAINER_WORKDIR}" \
-    -v "${STATE_DIR}":/root/.ai \
-    claude-code-tools "$@"
-
-  if [[ -f "$STATE_DIR/google_accounts.json" ]]; then cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH"; fi
-  if [[ -f "$STATE_DIR/settings.json" ]]; then cp "$STATE_DIR/settings.json" "$GLOBAL_SETTINGS"; fi
-
-  if [[ "$IS_INTERACTIVE" == "true" && -n "$GIT_ROOT" ]]; then
-    echo -e "\n👋 Сеанс Gemini завершен."
-    aic
-  fi
-}
+# Welcome message
+if [[ "$1" != "--quiet" ]]; then
+  echo "🚀 AI Assistant (Экспертная эфемерная архитектура)" >&2
+  echo "💡 Используйте 'ai-mode help' для справки" >&2
+fi

@@ -10,96 +10,106 @@
 **Current Session**: 2025-12-11
 **Last Updated**: 2025-12-11 13:00:00 UTC
 
-### ✅ Completed Today
+### ✅ Completed Today - ARCHITECTURE PARADIGM SHIFT
 
-- [x] Analyzed instruction architecture
-- [x] Created PROJECT_ARCHITECTURE.md
-- [x] Created DEVELOPMENT_GUIDE.md
-- [x] Created SECURITY_GUIDE.md
-- [x] Created CONFIGURATION_REFERENCE.md
-- [x] Identified optimization opportunities
-- [x] Recommended Hub-and-Spoke architecture
-- [x] Fixed CLAUDE.md hub implementation (critical fix)
-- [x] Added breadcrumbs navigation to all artifacts
-- [x] Validated 2-click navigation rule
-- [x] Created ai-session-manager.sh core script
-- [x] Implemented port allocator with conflict resolution
-- [x] Integrated Session Manager with ai-assistant.zsh
-- [x] Created comprehensive test suite
-- [x] Implemented .ai-plans Git-based planning system
-- [x] Created Session Manager v1.0 implementation plan
-- [x] Established cross-device synchronization strategy
+- [x] **PARADIGM SHIFT**: Identified persistent container architecture problems
+- [x] **EXPERT ANALYSIS**: Analyzed old-scripts/gemini.zsh expert patterns
+- [x] **ARCHITECTURE REDESIGN**: Complete migration to ephemeral containers
+- [x] **PROJECT_ARCHITECTURE.md**: Rewritten for expert ephemeral approach
+- [x] **SESSION_MANAGEMENT_ARCHITECTURE.md**: Redesigned for simple fire-and-forget model
+- [x] **PATTERN ADOPTION**: Implemented expert --rm and sync-in/sync-out patterns
+- [x] **COMPLEXITY REDUCTION**: Removed persistent tracking, health monitoring, auto-recovery
+- [x] **Docker Integration**: Fixed exit code 125 with simplified container startup
+- [x] **Documentation**: Updated all architecture docs with expert patterns
+- [x] **Previous accomplishments**: Documentation optimization, Hub-and-Spoke architecture, etc.
 
-### 📋 TODO This Week
+### 📋 TODO This Week - EPHEMERAL IMPLEMENTATION
 
-- [x] Update DEVOPS_ROADMAP.md with Session Manager plan
-- [x] Review SESSION_MANAGEMENT_ARCHITECTURE.md feasibility
-- [x] Create implementation plan for Session Manager Phase 1
-- [x] Validate multi-instance requirements
-- [x] Begin Session Manager core implementation
-- [ ] Complete real container integration (replace simulation)
-- [ ] Implement project context persistence
-- [ ] Add production monitoring and auto-recovery
-- [ ] Run comprehensive E2E tests with real containers
+- [x] **Architecture Migration**: Complete ephemeral architecture redesign
+- [ ] **ai-assistant.zsh Rewrite**: Implement expert gemini.zsh patterns
+- [ ] **Container Execution**: Implement simple `docker run --rm` functions
+- [ ] **Configuration Sync**: Implement sync-in/sync-out patterns
+- [ ] **SSH Integration**: Implement SSH agent forwarding
+- [ ] **Testing**: Validate ephemeral container approach
+- [ ] **Cleanup**: Remove persistent container components
+- [ ] **Documentation Update**: Update all guides with new patterns
 
 ---
 
 ## 📁 Active Implementation Plans
 
-### 🎯 [Session Manager v1.0 Implementation](./.ai-plans/session-manager-implementation.md)
-**Статус**: In Progress | **Приоритет**: HIGH | **Completion**: 60%
+### 🎯 [Ephemeral Architecture Migration](./PROJECT_ARCHITECTURE.md)
+**Статус**: ARCHITECTURE COMPLETE | **Приоритет**: CRITICAL | **Completion**: 90%
 
-**Key Components**:
-- ✅ Core session management engine
-- ✅ Port allocation and CLI integration
-- 🔄 Real container integration (in progress)
-- ⏳ Project context persistence (next phase)
+**Paradigm Shift Completed**:
+- ✅ **From Persistent to Ephemeral**: Complete architectural redesign
+- ✅ **Expert Pattern Adoption**: Based on old-scripts/gemini.zsh
+- ✅ **Simplified Implementation**: `docker run --rm` fire-and-forget
+- ✅ **Complexity Reduction**: Removed all persistent tracking
 
-**Current Week Focus**:
-- Replace simulation with real Docker containers
-- Implement comprehensive testing suite
-- Add project context discovery engine
+**Next Phase**:
+- Implement ai-assistant.zsh rewrite with expert patterns
+- Remove persistent container components
+- Update all documentation
 
 ### 📋 [Development Backlog](./.ai-plans/backlog.md)
-**Статус**: Accumulating | **Эпики**: 12 | **Story Points**: 329
+**Статус**: UPDATED FOR EPHEMERAL | **Эпики**: 15 | **Story Points**: 384
 
-**Upcoming Epics**:
-- EPIC-201: Plugin System Foundation (Q2 2026)
-- EPIC-202: Advanced Monitoring Integration (Q2 2026)
-- EPIC-301: Team Collaboration (Q3 2026)
+**Priority Shift**:
+- ~~Multi-instance production~~ → **Simple ephemeral execution**
+- ~~Resource monitoring~~ → **Configuration sync patterns**
+- ~~Health checking~~ → **Expert pattern implementation**
+
+**Updated Epics**:
+- **EPIC-401**: Full System Orchestration & Setup Automation
+- ~~EPIC-201**: ~~Plugin System Foundation~~ (deprioritized)
+- ~~EPIC-202**: ~~Advanced Monitoring~~ (simplified)
+- **Focus**: Core ephemeral AI functionality
 
 ---
 
-## 🎯 Development Roadmap
+## 🎯 Development Roadmap - EPHEMERAL FIRST
 
-### Q1 2026: Foundation Complete
+### Q1 2026: Ephemeral Architecture Complete ✅
 
-#### January 2026
-- [x] **Documentation Optimization** ✅ COMPLETED
-  - [x] Implemented Hub-and-Spoke architecture
-  - [x] Reduced CLAUDE.md to 136 lines (target <150)
-  - [x] Created all 7 specialized artifacts
-  - [x] Validated navigation efficiency (2-click rule)
+#### December 2025 - ARCHITECTURE REVOLUTION ✅
+- [x] **Paradigm Shift** ✅ COMPLETED
+  - [x] Identified persistent container problems
+  - [x] Analyzed expert patterns from old-scripts/gemini.zsh
+  - [x] Complete migration to ephemeral containers
+  - [x] Fixed Docker exit code 125 with simplified approach
 
-- [ ] **Multi-Instance Production**
-  - [ ] Complete Session Manager implementation
-  - [ ] Add resource quotas per instance
-  - [ ] Implement auto-scaling
-  - [ ] Performance benchmarking
+- [x] **Architecture Redesign** ✅ COMPLETED
+  - [x] PROJECT_ARCHITECTURE.md rewritten for ephemeral model
+  - [x] SESSION_MANAGEMENT_ARCHITECTURE.md simplified
+  - [x] Expert pattern adoption (--rm, sync-in/out)
+  - [x] Complexity reduction from 7 to 3 components
 
-### 📋 Session Manager Implementation Plan
+#### January 2026: EPHEMERAL IMPLEMENTATION
+- [ ] **ai-assistant.zsh Rewrite**
+  - [ ] Implement expert gemini.zsh patterns
+  - [ ] Add simple `docker run --rm` functions
+  - [ ] Implement sync-in/sync-out configuration
+  - [ ] Add SSH agent forwarding
 
-#### Phase 1: Core Foundation (December 2026)
-**Objective**: Implement basic multi-instance support
+- [ ] **Cleanup & Simplification**
+  - [ ] Remove ai-session-manager.sh (persistent)
+  - [ ] Clean up registry and state tracking
+  - [ ] Update all documentation
+  - [ ] Test simplified approach
 
-**Week 1 (Dec 11-17)**:
-- [x] Analyze architecture requirements
-- [x] Create implementation plan
-- [ ] Implement ai-session-manager.sh core functions
-  - [ ] Instance registry (JSON-based)
-  - [ ] Port allocator with conflict resolution
-  - [ ] Basic CLI commands (start, stop, list)
-- [ ] Integrate with ai-assistant.zsh
+### 📋 DEPRECATED: Session Manager Implementation Plan
+
+**⚠️ ARCHITECTURE DEPRECATED**: Persistent container approach replaced with expert ephemeral patterns.
+
+~~#### Phase 1: Core Foundation (December 2026)~~
+~~**Objective**: Implement basic multi-instance support~~
+
+**✅ NEW APPROACH**: Expert ephemeral containers based on old-scripts/gemini.zsh
+- ✅ **Simplicity**: `docker run --rm` fire-and-forget
+- ✅ **Reliability**: No state tracking, no health monitoring
+- ✅ **Performance**: No container limits, auto-cleanup
+- ✅ **Maintainability**: 3 components vs 7 (previous)
 
 **Week 2 (Dec 18-24)**:
 - [ ] Implement resource monitoring

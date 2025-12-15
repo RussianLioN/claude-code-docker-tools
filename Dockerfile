@@ -13,7 +13,7 @@ RUN echo "#!/bin/sh" > /usr/bin/locale && \
     echo "echo C.UTF-8" >> /usr/bin/locale && \
     chmod +x /usr/bin/locale
 
-# 3. Создание удобных команд 'll', 'l', 'claude'
+# 3. Создание удобных команд 'll', 'l'
 RUN echo '#!/bin/bash' > /usr/local/bin/ll && \
     echo 'ls -lh --color=auto "$@"' >> /usr/local/bin/ll && \
     chmod +x /usr/local/bin/ll
@@ -22,15 +22,11 @@ RUN echo '#!/bin/bash' > /usr/local/bin/l && \
     echo 'ls -F --color=auto "$@"' >> /usr/local/bin/l && \
     chmod +x /usr/local/bin/l
 
-RUN echo '#!/bin/bash' > /usr/local/bin/claude && \
-    echo 'echo "Claude Code AI Assistant - Ready for development!"' >> /usr/local/bin/claude && \
-    chmod +x /usr/local/bin/claude
-
-# 4. Установка Gemini CLI (используем ARG для инвалидации кэша при обновлении)
+# 4. Установка Gemini CLI
 RUN npm install -g @google/gemini-cli@${GEMINI_VERSION} --no-audit
 
 # 5. Установка Claude Code CLI tools
-RUN npm install -g @anthropic-ai/claude-cli@${CLAUDE_VERSION} --no-audit || echo "Claude CLI not available, using fallback"
+RUN npm install -g @anthropic-ai/claude-code@latest --no-audit
 
 # 6. Создание директорий для Claude Code
 RUN mkdir -p /root/.claude /root/.claude-config
@@ -39,6 +35,7 @@ RUN mkdir -p /root/.claude /root/.claude-config
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
 
 # 8. Claude Code environment variables
+ENV CLAUDE_CONFIG_DIR="/root/.claude-config"
 ENV CLAUDE_API_KEY=""
 ENV CLAUDE_MODEL="claude-3-5-sonnet-20241022"
 ENV CLAUDE_MAX_TOKENS=4096

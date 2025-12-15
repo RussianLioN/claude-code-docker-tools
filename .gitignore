@@ -25,3 +25,6 @@ gh_config/
 *.log
 .ai-plans/temp/
 .ai-plans/*.draft.md
+
+# Gemini AI Context
+.gemini-state/
