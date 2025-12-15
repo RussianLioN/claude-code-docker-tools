@@ -129,7 +129,10 @@ function prepare_configuration() {
 
   if [[ -n "$GIT_ROOT" ]]; then
     export TARGET_DIR="$GIT_ROOT"
-    export STATE_DIR="$GIT_ROOT/.ai-state"
+    # export STATE_DIR="$GIT_ROOT/.ai-state" # DISABLED: Local state causes auth fragmentation
+    export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state" # ENABLED: Force global state for consistent auth
+    
+    # Optional: If you really want project-specific isolation, uncomment above and use sync-in below
   else
     export TARGET_DIR="$(pwd)"
     export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state"
@@ -476,7 +479,7 @@ elif [[ -n "$ZSH_VERSION" ]]; then
 fi
 
 # Ensure we're in proper directory
-cd "$AI_TOOLS_HOME" 2>/dev/null || true
+# cd "$AI_TOOLS_HOME" 2>/dev/null || true
 
 # Welcome message
 if [[ "$1" != "--quiet" ]]; then
