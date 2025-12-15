@@ -13,6 +13,7 @@ export LEGACY_DOCKER_CONFIG_HOME="${HOME}/.docker-gemini-config"
 export GLOBAL_AUTH="$DOCKER_AI_CONFIG_HOME/google_accounts.json"
 export GLOBAL_SETTINGS="$DOCKER_AI_CONFIG_HOME/settings.json"
 export CLAUDE_CONFIG="$DOCKER_AI_CONFIG_HOME/claude_config.json"
+export GLM_CONFIG="$DOCKER_AI_CONFIG_HOME/glm_config.json"
 export GH_CONFIG_DIR="$DOCKER_AI_CONFIG_HOME/gh_config"
 
 # Check if migration is needed
@@ -145,6 +146,7 @@ function prepare_configuration() {
   
   # Unified state directory for Claude within the project or global state
   export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
+  export GLM_STATE_DIR="$STATE_DIR/glm_config"
 
   local PROJECT_NAME=$(basename "$TARGET_DIR")
   
@@ -170,6 +172,7 @@ function prepare_configuration() {
   mkdir -p "$STATE_DIR"
   mkdir -p "$GH_CONFIG_DIR"
   mkdir -p "$CLAUDE_STATE_DIR"
+  mkdir -p "$GLM_STATE_DIR"
 
   # SSH Configuration Sanitization (expert pattern)
   local SSH_CONFIG_SRC="$HOME/.ssh/config"
@@ -191,6 +194,10 @@ function prepare_configuration() {
 
   if [[ -f "$CLAUDE_CONFIG" ]]; then
     cp "$CLAUDE_CONFIG" "$STATE_DIR/claude_config.json"
+  fi
+
+  if [[ -f "$GLM_CONFIG" ]]; then
+    cp "$GLM_CONFIG" "$STATE_DIR/glm_config.json"
   fi
 
   # Load Claude API key if available
@@ -226,6 +233,10 @@ function cleanup_configuration() {
 
   if [[ -f "$STATE_DIR/claude_config.json" ]]; then
     cp "$STATE_DIR/claude_config.json" "$CLAUDE_CONFIG" 2>/dev/null || true
+  fi
+  
+  if [[ -f "$STATE_DIR/glm_config.json" ]]; then
+    cp "$STATE_DIR/glm_config.json" "$GLM_CONFIG" 2>/dev/null || true
   fi
   
   # Sync-out Claude State (Expert Pattern: Manual Copy due to bind mount issues)
@@ -286,8 +297,71 @@ function run_ephemeral_container() {
     # Fix for ETIMEDOUT: Force IPv4 for Node.js applications (Claude & Gemini)
     env_vars+=("-e" "NODE_OPTIONS=--dns-result-order=ipv4first")
 
-    if [[ "$command" == "claude" ]]; then
+    if [[ "$command" == "glm" ]]; then
+    # GLM Mode via Z.AI logic
+      # ... (logic injected previously)
+      local zai_key="${ZAI_API_KEY:-}"
+      if [[ -z "$zai_key" && -f "$DOCKER_AI_CONFIG_HOME/global_state/secrets/zai_key" ]]; then
+         zai_key=$(cat "$DOCKER_AI_CONFIG_HOME/global_state/secrets/zai_key")
+      fi
+      
+      if [[ -z "$zai_key" ]]; then
+         echo "❌ Ошибка: ZAI_API_KEY не найден." >&2
+         echo "   Установите переменную окружения ZAI_API_KEY или сохраните ключ в secrets." >&2
+         return 1
+      fi
+
+      local glm_runtime_config="$STATE_DIR/glm_config_runtime.json"
+      cat > "$glm_runtime_config" <<EOF
+{
+  "env": {
+      "ANTHROPIC_AUTH_TOKEN": "$zai_key",
+      "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+      "API_TIMEOUT_MS": "3000000"
+  }
+}
+EOF
+      env_vars+=("-e" "AI_MODE=glm")
+      local container_name="glm-session-$(date +%s)"
+      local container_hostname="glm-dev-env"
+      local active_state_dir="${GLM_STATE_DIR}"
+
+      docker run $DOCKER_FLAGS --name "$container_name" \
+        --hostname "$container_hostname" \
+        --network host \
+        "${env_vars[@]}" \
+        -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
+        -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+        -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
+        -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
+        -v "${GIT_CONFIG}":/root/.gitconfig \
+        -v "${GH_CONFIG_DIR}":/root/.config/gh \
+        -v "${active_state_dir}":/root/.claude-config \
+        -v "${glm_runtime_config}":/root/.claude/config.json \
+        -w "${CONTAINER_WORKDIR}" \
+        -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
+        -v "${STATE_DIR}":/root/.gemini \
+        "$ai_image" "$@"
+        
+      local exit_code=$?
+      rm -f "$glm_runtime_config"
+      
+      echo "💾 Сохранение сессии GLM..." >&2
+      mkdir -p "$GLM_STATE_DIR"
+      chmod 755 "$GLM_STATE_DIR" 2>/dev/null || true
+      if docker cp "$container_name":/root/.claude-config/. "$GLM_STATE_DIR/" >/dev/null 2>&1; then
+         echo "✅ Сессия GLM успешно сохранена в $GLM_STATE_DIR" >&2
+      else
+         echo "⚠️ Ошибка сохранения сессии GLM." >&2
+      fi
+      
+      docker rm -f "$container_name" >/dev/null 2>&1
+      return $exit_code
+
+    elif [[ "$command" == "claude" ]]; then
       env_vars+=("-e" "AI_MODE=claude")
+      # ... rest of claude logic
+
       # Pass Claude API key if available
       if [[ -n "$CLAUDE_API_KEY" ]]; then
         env_vars+=("-e" "CLAUDE_API_KEY=$CLAUDE_API_KEY")
@@ -382,6 +456,28 @@ function gemini() {
   return $exit_code
 }
 
+function glm() {
+  ensure_docker_running
+  ensure_ssh_loaded
+  prepare_configuration
+
+  local is_interactive=false
+  if [ -t 1 ] && [ -z "$1" ]; then
+    is_interactive=true
+  fi
+
+  run_ephemeral_container glm "$@"
+  local exit_code=$?
+
+  cleanup_configuration
+
+  if [[ "$is_interactive" == "true" && -n "$GIT_ROOT" ]]; then
+    echo -e "\n👋 Сеанс GLM завершен." >&2
+  fi
+
+  return $exit_code
+}
+
 function claude() {
   # Native bypass check
   if [[ "$1" == "--native" || "$1" == "--local" ]]; then
@@ -465,6 +561,7 @@ function ai-mode() {
       echo "Commands:"
       echo "  gemini     🚀 Gemini Code Assistant"
       echo "  claude     🤖 Claude Code Assistant"
+      echo "  glm        🇨🇳 GLM-4.6 (Z.AI) Assistant"
       echo "    --native Указание флага запускает локальную версию"
       echo ""
       echo "  aic        📝 Gemini AI Commit"
@@ -498,9 +595,9 @@ function ai-session-manager() {
 
 # Auto-completion
 if [[ -n "$BASH_VERSION" ]]; then
-  complete -W "gemini claude aic cic gexec ai-mode" ai-assistant 2>/dev/null || true
+  complete -W "gemini claude glm aic cic gexec ai-mode" ai-assistant 2>/dev/null || true
 elif [[ -n "$ZSH_VERSION" ]]; then
-  compdef _ai_assistant_completion gemini claude aic cic gexec ai-mode 2>/dev/null || true
+  compdef _ai_assistant_completion gemini claude glm aic cic gexec ai-mode 2>/dev/null || true
 fi
 
 # Ensure we're in proper directory

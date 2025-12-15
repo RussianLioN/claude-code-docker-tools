@@ -49,7 +49,8 @@ Before responding to ANY request:
 # AI assistants
 gemini                    # Start Gemini AI
 claude                    # Start Claude AI
-ai-mode <gemini|claude>   # Switch AI mode
+glm                       # Start GLM-4.6 (Z.AI)
+ai-mode <gemini|claude|glm>   # Switch AI mode
 
 # AI-powered commits
 aic                       # Gemini AI Commit (DevOps style)
