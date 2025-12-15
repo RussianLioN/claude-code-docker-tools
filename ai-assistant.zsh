@@ -153,18 +153,18 @@ function prepare_configuration() {
     PROJECT_NAME="project"
   fi
 
-  # Expert Mount Strategy: "Named Workspace"
-  # We mount the project root to /workspace/<PROJECT_NAME>
-  # This ensures the project name is always visible in the path, whether it's a git root or a standalone folder.
+  # Expert Mount Strategy: "Adaptive Workspace"
+  # 1. If we are at the project root (RELATIVE_PATH is empty), we mount to /workspace/<PROJECT_NAME>
+  #    This ensures the project name is visible in the UI.
+  # 2. If we are in a subdirectory (RELATIVE_PATH exists), we mount the root to /workspace
+  #    This hides the parent directory name (e.g. "test") and shows the subdirectory path directly (e.g. /workspace/claude-docker-test)
   
-  # Base workdir in container
-  export CONTAINER_BASE_DIR="/workspace/$PROJECT_NAME"
-  
-  # Actual workdir includes relative path
-  if [[ -n "$RELATIVE_PATH" ]]; then
-    export CONTAINER_WORKDIR="$CONTAINER_BASE_DIR/$RELATIVE_PATH"
-  else
+  if [[ -z "$RELATIVE_PATH" ]]; then
+    export CONTAINER_BASE_DIR="/workspace/$PROJECT_NAME"
     export CONTAINER_WORKDIR="$CONTAINER_BASE_DIR"
+  else
+    export CONTAINER_BASE_DIR="/workspace"
+    export CONTAINER_WORKDIR="$CONTAINER_BASE_DIR/$RELATIVE_PATH"
   fi
 
   mkdir -p "$STATE_DIR"
