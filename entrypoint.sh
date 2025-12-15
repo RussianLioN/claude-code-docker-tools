@@ -6,7 +6,7 @@
 set -e
 
 # Определяем основной AI ассистент
-if [[ -n "$CLAUDE_API_KEY" ]] && [[ "$AI_MODE" == "claude" ]]; then
+if [[ "$AI_MODE" == "claude" ]]; then
     echo "🤖 Claude Code Mode Activated"
     export AI_PROVIDER="claude"
     export AI_MODEL=${CLAUDE_MODEL:-"claude-3-5-sonnet-20241022"}
