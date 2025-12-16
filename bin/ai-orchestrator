@@ -1,0 +1,77 @@
+#!/bin/bash
+# AI Orchestrator - Central dispatcher for AI modules
+# Version: 2.0.0
+
+set -euo pipefail
+
+# Show usage
+show_usage() {
+    cat << 'USAGE_EOF'
+AI Orchestrator v2.0.0
+
+Использование: ai-orchestrator <режим> <команда> [аргументы...]
+
+Режимы:
+  gemini, g    - Google Gemini
+  claude, c    - Anthropic Claude Code  
+  glm, z       - GLM-4.6 (Z.AI)
+
+Команды:
+  start [args] - Запустить AI-сервис
+  stop         - Остановить AI-сервис
+  status       - Показать статус
+  help         - Показать эту справку
+
+Примеры:
+  ai-orchestrator gemini start
+  ai-orchestrator claude status
+  ai-orchestrator glm stop
+
+USAGE_EOF
+}
+
+# Main orchestrator function
+orchestrate() {
+    local mode="${1:-}"
+    local command="${2:-help}"
+    shift 2 || true
+    
+    # Determine mode from script name if mode is a command (not a valid mode)
+    if [[ "$mode" == "start" || "$mode" == "stop" || "$mode" == "status" || "$mode" == "help" || "$mode" == "debug" ]]; then
+        local script_name="$(basename "$0")"
+        case "$script_name" in
+            gemini) mode="gemini" ;;
+            claude) mode="claude" ;;
+            glm) mode="glm" ;;
+            *) mode="" ;;
+        esac
+        # Shift arguments since mode was determined from script name
+        command="${1:-help}"
+        shift 1 || true
+    fi
+    
+    # Handle help case
+    if [[ "$mode" == "help" || "$mode" == "--help" || "$mode" == "-h" ]]; then
+        show_usage
+        return 0
+    fi
+    
+    # Validate mode
+    case "$mode" in
+        gemini|g) mode="gemini" ;;
+        claude|c) mode="claude" ;;
+        glm|z) mode="glm" ;;
+        "") show_usage; return 0 ;;
+        *) echo "Ошибка: Неизвестный режим: $mode" >&2; show_usage; return 1 ;;
+    esac
+    
+    echo "Модуль: $mode, команда: $command"
+    return 0
+}
+
+# Main entry point
+main() {
+    orchestrate "$@"
+}
+
+main "$@"
