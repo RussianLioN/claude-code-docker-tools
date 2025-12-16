@@ -146,7 +146,8 @@ function prepare_configuration() {
   
   # Unified state directory for Claude within the project or global state
   export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
-  export GLM_STATE_DIR="$STATE_DIR/glm_config"
+  export GLM_STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state/glm_config"
+  mkdir -p "$GLM_STATE_DIR"
 
   local PROJECT_NAME=$(basename "$TARGET_DIR")
   
@@ -186,6 +187,13 @@ function prepare_configuration() {
   # Sync-in configuration files
   if [[ -f "$GLOBAL_AUTH" ]]; then
     cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"
+    # DEBUG: Check if file was copied
+    if [[ ! -s "$STATE_DIR/google_accounts.json" ]]; then
+       echo "⚠️  Внимание: google_accounts.json пуст или не скопирован!" >&2
+       ls -l "$GLOBAL_AUTH" >&2
+    fi
+  else
+    echo "⚠️  Внимание: Файл авторизации не найден: $GLOBAL_AUTH" >&2
   fi
 
   if [[ -f "$GLOBAL_SETTINGS" ]]; then
@@ -311,42 +319,67 @@ function run_ephemeral_container() {
          return 1
       fi
 
-      local glm_runtime_config="$STATE_DIR/glm_config_runtime.json"
-      cat > "$glm_runtime_config" <<EOF
+       local glm_settings_file="$GLM_STATE_DIR/settings.json"
+       
+       # Generate comprehensive settings.json based on Z.AI requirements
+       cat > "$glm_settings_file" <<EOF
 {
+  "ANTHROPIC_AUTH_TOKEN": "$zai_key",
+  "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+  "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
+  "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6",
+  "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
+  "ANTHROPIC_MODEL": "glm-4.6",
+  "alwaysThinkingEnabled": true,
   "env": {
-      "ANTHROPIC_AUTH_TOKEN": "$zai_key",
-      "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
-      "API_TIMEOUT_MS": "3000000"
-  }
+    "ANTHROPIC_AUTH_TOKEN": "$zai_key",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
+    "ANTHROPIC_MODEL": "glm-4.6",
+    "alwaysThinkingEnabled": "true"
+  },
+  "includeCoAuthoredBy": false
 }
 EOF
-      env_vars+=("-e" "AI_MODE=glm")
-      local container_name="glm-session-$(date +%s)"
-      local container_hostname="glm-dev-env"
-      local active_state_dir="${GLM_STATE_DIR}"
+       # Duplicate as config.json just in case
+       cp "$glm_settings_file" "$GLM_STATE_DIR/config.json"
 
-      docker run $DOCKER_FLAGS --name "$container_name" \
-        --hostname "$container_hostname" \
-        --network host \
-        "${env_vars[@]}" \
-        -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
-        -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
-        -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
-        -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
-        -v "${GIT_CONFIG}":/root/.gitconfig \
-        -v "${GH_CONFIG_DIR}":/root/.config/gh \
-        -v "${active_state_dir}":/root/.claude-config \
-        -v "${glm_runtime_config}":/root/.claude/config.json \
-        -w "${CONTAINER_WORKDIR}" \
-        -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
-        -v "${STATE_DIR}":/root/.gemini \
-        "$ai_image" "$@"
+        # FORCE AI_MODE=claude so entrypoint.sh launches claude binary
+        env_vars+=("-e" "AI_MODE=claude")
         
-      local exit_code=$?
-      rm -f "$glm_runtime_config"
-      
-      echo "💾 Сохранение сессии GLM..." >&2
+        # INJECT ENV VARS FOR ROBUSTNESS (Double Tap)
+        # Even if config file is ignored, these env vars will force the SDK to use Z.AI
+        env_vars+=("-e" "ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic")
+        env_vars+=("-e" "ANTHROPIC_API_KEY=$zai_key")
+
+        local container_name="glm-session-$(date +%s)"
+        local container_hostname="glm-dev-env"
+        
+        # EXACT CLONE OF CLAUDE MOUNT LOGIC
+        # Mounting to /root/.claude-config because that's what works for Claude
+        local active_state_dir="${GLM_STATE_DIR}"
+  
+        docker run $DOCKER_FLAGS --name "$container_name" \
+          --hostname "$container_hostname" \
+          --network host \
+          "${env_vars[@]}" \
+          -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
+          -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock \
+          -v "${SSH_KNOWN_HOSTS}":/root/.ssh/known_hosts \
+          -v "${SSH_CONFIG_CLEAN}":/root/.ssh/config \
+          -v "${GIT_CONFIG}":/root/.gitconfig \
+          -v "${GH_CONFIG_DIR}":/root/.config/gh \
+          -v "${active_state_dir}":/root/.claude-config \
+          -w "${CONTAINER_WORKDIR}" \
+          -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
+          -v "${STATE_DIR}":/root/.gemini \
+          "$ai_image" "$@"
+          
+        local exit_code=$?
+        
+        echo "💾 Сохранение сессии GLM..." >&2
       mkdir -p "$GLM_STATE_DIR"
       chmod 755 "$GLM_STATE_DIR" 2>/dev/null || true
       if docker cp "$container_name":/root/.claude-config/. "$GLM_STATE_DIR/" >/dev/null 2>&1; then
@@ -393,7 +426,8 @@ EOF
       -w "${CONTAINER_WORKDIR}" \
       -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
       -v "${STATE_DIR}":/root/.gemini \
-      "$ai_image" "$@"
+      --entrypoint "/bin/sh" \
+      "$ai_image" -c "claude $@; echo '👋 Claude завершен. Запуск отладочного шелла...'; exec /bin/bash"
       
     local exit_code=$?
     
@@ -418,10 +452,13 @@ EOF
     
     # Cleanup container
     # DEBUG MODE: Disabled. Production behavior restored.
-    docker rm -f "$container_name" >/dev/null 2>&1
-    # echo "🐞 DEBUG: Контейнер сохранен для отладки: $container_name" >&2
-    # echo "   Для входа: docker exec -it $container_name /bin/bash" >&2
-    # echo "   Для удаления: docker rm -f $container_name" >&2
+    # For debugging, comment out the next line:
+    # docker rm -f "$container_name" >/dev/null 2>&1
+    echo "🐞 DEBUG: Контейнер сохранен для отладки: $container_name" >&2
+    echo "   Для входа: docker exec -it $container_name /bin/bash" >&2
+    echo "   Конфиги: /root/.claude-config" >&2
+    echo "   Env: env | grep ANTHROPIC" >&2
+    echo "   Для удаления: docker rm -f $container_name" >&2
      
     return $exit_code
   fi
