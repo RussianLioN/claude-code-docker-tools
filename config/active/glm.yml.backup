@@ -1,0 +1,77 @@
+# GLM-4.6 Development Configuration
+# Template for isolated GLM-4.6 environment
+
+# AI Configuration
+ai_mode: glm
+ai_provider: glm
+model: glm-4.6
+version: "3.1.0"
+
+# Resource Limits
+resources:
+  memory_limit: "768m"
+  cpu_limit: "0.8"
+  pids_limit: 80
+  timeout: 30
+
+# GLM-specific Settings
+glm:
+  max_tokens: 4096
+  temperature: 0.7
+  stream: true
+  top_p: 0.9
+  frequency_penalty: 0.0
+  api_base: "https://api.z.ai"
+  
+# Workspace Configuration
+workspace:
+  base_dir: "./workspace/glm"
+  config_dir: "./config/active/glm"
+  mount_point: "/home/glm/.glm-config"
+  
+# Plugins and Extensions
+plugins:
+  enabled:
+    - mcp-server
+    - zai-tools
+    - project-tools
+    - code-analysis
+  
+  mcp_servers:
+    - name: "filesystem"
+      command: "npx -y @modelcontextprotocol/server-filesystem"
+      args: ["/workspace/glm"]
+    - name: "git"
+      command: "npx -y @modelcontextprotocol/server-git"
+      args: ["/workspace/glm"]
+    - name: "zai-search"
+      command: "npx -y @z-ai/mcp-search"
+      env:
+        ZAI_API_KEY: "${ZAI_API_KEY}"
+
+# Development Settings
+development:
+  debug: false
+  verbose: false
+  auto_save: true
+  backup_sessions: true
+  
+# Security Settings
+security:
+  isolate_network: false
+  read_only_filesystem: false
+  drop_capabilities: []
+  security_options: []
+
+# Monitoring
+monitoring:
+  health_check: true
+  metrics: true
+  logs: true
+  
+# Backup Configuration
+backup:
+  enabled: true
+  interval: "1h"
+  retention: "7d"
+  destination: "./backups/glm"

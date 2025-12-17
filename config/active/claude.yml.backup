@@ -1,0 +1,76 @@
+# Claude Code Development Configuration
+# Template for isolated Claude Sonnet 4.5 environment
+
+# AI Configuration
+ai_mode: claude
+ai_provider: claude
+model: claude-3-5-sonnet-20241022
+version: "3.1.0"
+
+# Resource Limits
+resources:
+  memory_limit: "1g"
+  cpu_limit: "1.0"
+  pids_limit: 100
+  timeout: 30
+
+# Claude-specific Settings
+claude:
+  max_tokens: 4096
+  temperature: 0.7
+  stream: true
+  top_p: 0.9
+  frequency_penalty: 0.0
+  
+# Workspace Configuration
+workspace:
+  base_dir: "./workspace/claude"
+  config_dir: "./config/active/claude"
+  mount_point: "/home/claude/.claude-config"
+  
+# Plugins and Extensions
+plugins:
+  enabled:
+    - mcp-server
+    - git-integration
+    - project-tools
+    - code-analysis
+  
+  mcp_servers:
+    - name: "filesystem"
+      command: "npx -y @modelcontextprotocol/server-filesystem"
+      args: ["/workspace/claude"]
+    - name: "git"
+      command: "npx -y @modelcontextprotocol/server-git"
+      args: ["/workspace/claude"]
+    - name: "brave-search"
+      command: "npx -y @modelcontextprotocol/server-brave-search"
+      env:
+        BRAVE_API_KEY: "${BRAVE_API_KEY}"
+
+# Development Settings
+development:
+  debug: false
+  verbose: false
+  auto_save: true
+  backup_sessions: true
+  
+# Security Settings
+security:
+  isolate_network: false
+  read_only_filesystem: false
+  drop_capabilities: []
+  security_options: []
+
+# Monitoring
+monitoring:
+  health_check: true
+  metrics: true
+  logs: true
+  
+# Backup Configuration
+backup:
+  enabled: true
+  interval: "1h"
+  retention: "7d"
+  destination: "./backups/claude"

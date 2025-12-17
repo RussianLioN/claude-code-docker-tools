@@ -1,0 +1,55 @@
+# Docker ignore file for AI Assistant
+# Exclude unnecessary files from build context
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git files
+.git/
+.gitignore
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Logs
+logs/
+*.log
+
+# Backup files
+backups/
+*.backup
+
+# Documentation
+docs/
+*.md
+
+# Test files
+tests/
+*.test
+
+# Configuration (will be mounted as volumes)
+config/active/
+workspace/
+
+# Only include necessary files
+!containers/*/Dockerfile
+!containers/*/entrypoint.sh

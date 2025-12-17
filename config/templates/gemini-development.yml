@@ -1,0 +1,79 @@
+# Gemini CLI Development Configuration
+# Template for isolated Gemini 2.5-Pro environment
+
+# AI Configuration
+ai_mode: gemini
+ai_provider: gemini
+model: gemini-2.5-pro
+version: "3.1.0"
+
+# Resource Limits
+resources:
+  memory_limit: "512m"
+  cpu_limit: "0.5"
+  pids_limit: 60
+  timeout: 30
+
+# Gemini-specific Settings
+gemini:
+  max_tokens: 4096
+  temperature: 0.7
+  stream: true
+  top_p: 0.9
+  top_k: 40
+  candidate_count: 1
+  google_cloud_project: "claude-code-docker-tools"
+  
+# Workspace Configuration
+workspace:
+  base_dir: "./workspace/gemini"
+  config_dir: "./config/active/gemini"
+  mount_point: "/home/gemini/.gemini-config"
+  
+# Plugins and Extensions
+plugins:
+  enabled:
+    - mcp-server
+    - git-integration
+    - project-tools
+    - code-analysis
+  
+  mcp_servers:
+    - name: "filesystem"
+      command: "npx -y @modelcontextprotocol/server-filesystem"
+      args: ["/workspace/gemini"]
+    - name: "git"
+      command: "npx -y @modelcontextprotocol/server-git"
+      args: ["/workspace/gemini"]
+    - name: "google-search"
+      command: "npx -y @modelcontextprotocol/server-google-search"
+      env:
+        GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+        GOOGLE_SEARCH_ENGINE_ID: "${GOOGLE_SEARCH_ENGINE_ID}"
+
+# Development Settings
+development:
+  debug: false
+  verbose: false
+  auto_save: true
+  backup_sessions: true
+  
+# Security Settings
+security:
+  isolate_network: false
+  read_only_filesystem: false
+  drop_capabilities: []
+  security_options: []
+
+# Monitoring
+monitoring:
+  health_check: true
+  metrics: true
+  logs: true
+  
+# Backup Configuration
+backup:
+  enabled: true
+  interval: "1h"
+  retention: "7d"
+  destination: "./backups/gemini"
