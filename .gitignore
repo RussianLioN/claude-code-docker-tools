@@ -29,3 +29,27 @@ gh_config/
 
 # Gemini AI Context
 .gemini-state/
+
+# Временные файлы и директории
+tmp/
+logs/
+*.tmp
+*.temp
+
+# Архивы
+archive/
+*.tar.gz
+*.zip
+
+# Резервные копии
+backup/
+*.bak
+*.backup
+
+# Логи
+*.log
+logs/
+
+# Примеры и шаблоны (если не нужны в репозитории)
+examples/
+templates/

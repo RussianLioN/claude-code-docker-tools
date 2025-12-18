@@ -1,0 +1,61 @@
+{
+  "name": "claude-code-docker-tools",
+  "version": "1.0.0",
+  "description": "Claude Code + Gemini Dual AI Environment with Docker",
+  "main": "ai-assistant.zsh",
+  "scripts": {
+    "version:patch": "npm version patch -m 'chore: bump version to %s'",
+    "version:minor": "npm version minor -m 'feat: bump version to %s'",
+    "version:major": "npm version major -m 'feat!: bump version to %s'",
+    "release": "npm run build && npm run test && npm run version:patch",
+    "build": "echo 'Building project...' && ./scripts/ci-performance-analyzer.sh",
+    "test": "echo 'Running tests...' && pre-commit run --all-files",
+    "lint": "pre-commit run --all-files",
+    "clean": "./tools/cleanup.sh",
+    "size": "./tools/size-monitor.sh",
+    "organize": "./scripts/organize-structure.sh"
+  },
+  "keywords": [
+    "ai",
+    "claude",
+    "gemini",
+    "docker",
+    "assistant",
+    "development",
+    "automation"
+  ],
+  "author": "AI Assistant Development Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/claude-code-docker-tools.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "pre-commit": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "@google/gemini-cli": "latest",
+    "@anthropic-ai/claude-code": "latest"
+  },
+  "config": {
+    "version_scheme": "semver",
+    "changelog_file": "CHANGELOG.md",
+    "auto_update_changelog": true
+  },
+  "release": {
+    "branches": [
+      "main",
+      "master"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      "@semantic-release/npm",
+      "@semantic-release/github"
+    ]
+  }
+}

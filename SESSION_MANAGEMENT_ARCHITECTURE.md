@@ -22,6 +22,7 @@
 ### 🎯 Paradigm Shift: From Persistent to Ephemeral
 
 **❌ Previous Architecture (Problems)**:
+
 - Персистентные контейнеры с сложным lifecycle
 - State tracking, health monitoring, auto-recovery
 - Container registry, port allocation complexity
@@ -29,6 +30,7 @@
 - Cleanup problems, orphaned containers
 
 **✅ Expert Architecture (Solutions)**:
+
 - Эфемерные контейнеры с `--rm` pattern
 - Запуск и забывание (fire-and-forget)
 - Автоматическая очистка ресурсов
@@ -75,6 +77,7 @@
 **Экспертные паттерны** из проверенного кода:
 
 #### 1. Эфемерный Запуск Контейнера
+
 ```bash
 # Экспертный паттерн из gemini.zsh (строка 99)
 docker run $DOCKER_FLAGS --rm \
@@ -93,12 +96,14 @@ docker run $DOCKER_FLAGS --rm \
 ```
 
 **Ключевые принципы**:
+
 - `--rm`: Автоматическая очистка
 - `--network host`: Оптимальная производительность
 - Минимальные volume mounts
 - SSH agent forwarding (не ключи)
 
 #### 2. Configuration Sync Pattern
+
 ```bash
 # Экспертный sync-in pattern (строки 73-85)
 if [[ -n "$GIT_ROOT" ]]; then
@@ -117,6 +122,7 @@ if [[ -f "$STATE_DIR/google_accounts.json" ]]; then cp "$STATE_DIR/google_accoun
 ```
 
 #### 3. SSH Sanitization Pattern
+
 ```bash
 # Экспертный подход (строки 89-94)
 local SSH_CONFIG_CLEAN="$STATE_DIR/ssh_config_clean"
@@ -132,6 +138,7 @@ fi
 ### 🚀 Core Principles
 
 #### 1. Fire-and-Forget Execution
+
 ```bash
 # Каждый вызов = новый эфемерный контейнер
 function gemini() {
@@ -143,12 +150,14 @@ function gemini() {
 ```
 
 **Преимущества**:
+
 - Никаких проблем с orphaned контейнерами
 - Автоматическая очистка ресурсов
 - Предсказуемое поведение
 - Простота отладки
 
 #### 2. Configuration Isolation
+
 ```
 Global Config (~/.docker-gemini-config/)     Project Config (.gemini-state/)
 ├── google_accounts.json                    ├── google_accounts.json
@@ -159,6 +168,7 @@ Global Config (~/.docker-gemini-config/)     Project Config (.gemini-state/)
 ```
 
 #### 3. SSH Agent Forwarding
+
 ```bash
 # Никаких SSH ключей в контейнере!
 -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
@@ -170,6 +180,7 @@ Global Config (~/.docker-gemini-config/)     Project Config (.gemini-state/)
 ### 📋 Required Components
 
 #### 1. Core Wrapper Functions
+
 ```bash
 # ai-assistant.zsh - основной wrapper
 function gemini() {
@@ -198,6 +209,7 @@ function cic() {
 ```
 
 #### 2. Configuration Management
+
 ```bash
 function sync_in_configuration() {
   local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -221,6 +233,7 @@ function sync_out_configuration() {
 ```
 
 #### 3. Container Execution
+
 ```bash
 function run_ephemeral_container() {
   local command="$1"
@@ -262,12 +275,14 @@ function run_ephemeral_container() {
 ### 🛡️ Security Principles
 
 #### Zero Trust Model
+
 - Секреты никогда не покидают диск хоста
 - Использование SSH agent forwarding
 - Временные volume mounts только на время сессии
 - Автоматическая очистка конфиденциальных данных
 
 #### SSH Configuration Sanitization
+
 ```bash
 # Удаляются macOS-specific директивы
 - UseKeychain
@@ -279,6 +294,7 @@ function run_ephemeral_container() {
 ### 🔄 Sync Patterns
 
 #### Sync-In (Pre-execution)
+
 ```bash
 function sync_in() {
   # 1. Определить контекст (git проект или нет)
@@ -289,6 +305,7 @@ function sync_in() {
 ```
 
 #### Sync-Out (Post-execution)
+
 ```bash
 function sync_out() {
   # 1. Сохранить измененные настройки
@@ -302,6 +319,7 @@ function sync_out() {
 ### 🔄 From Persistent to Ephemeral
 
 #### Step 1: Update ai-assistant.zsh
+
 ```bash
 # Удалить сложные функции управления сессиями
 # Заменить простыми wrapper функциями
@@ -317,6 +335,7 @@ function claude() { ... }  # Эфемерный запуск
 ```
 
 #### Step 2: Remove Persistent Components
+
 ```bash
 # Удалить файлы
 rm -f scripts/ai-session-manager.sh
@@ -324,6 +343,7 @@ rm -rf ~/.ai-sessions/
 ```
 
 #### Step 3: Adopt Expert Patterns
+
 ```bash
 # Скопировать проверенные паттерны из old-scripts/gemini.zsh
 # Адаптировать для double AI mode (Gemini + Claude)
@@ -334,6 +354,7 @@ rm -rf ~/.ai-sessions/
 ### 🔄 Backward Compatibility
 
 #### Optional Session Manager
+
 ```bash
 # Оставить ai-session-manager.sh для legacy поддержки
 # Но переписать для использования эфемерных контейнеров
@@ -345,6 +366,7 @@ function start_instance() {
 ```
 
 #### Migration Path
+
 1. **Phase 1**: Обновить ai-assistant.zsh с эфемерными функциями
 2. **Phase 2**: Обновить документацию и примеры
 3. **Phase 3**: Депрекейт ai-session-manager.sh

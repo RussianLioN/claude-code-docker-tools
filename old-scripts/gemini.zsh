@@ -18,7 +18,7 @@ function ensure_ssh_loaded() {
   if ! ssh-add -l > /dev/null 2>&1; then
     # Если пусто - пробуем восстановить из Keychain
     ssh-add --apple-load-keychain > /dev/null 2>&1
-    
+
     # Если все еще пусто
     if ! ssh-add -l > /dev/null 2>&1; then
        echo "⚠️  Внимание: SSH-агент пуст. Git внутри контейнера может не работать." >&2
@@ -31,7 +31,7 @@ function check_gemini_update() {
   if ping -c 1 -W 100 8.8.8.8 &> /dev/null; then
     local CURRENT_VER=$(docker run --rm --entrypoint gemini gemini-cli --version 2>/dev/null)
     local LATEST_VER=$(curl -m 3 -s https://registry.npmjs.org/@google/gemini-cli/latest | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
-    
+
     if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
       echo "✨ \033[1;35mДоступно обновление Gemini CLI:\033[0m $CURRENT_VER -> $LATEST_VER" >&2
       echo "📦 Пересборка образа..." >&2
@@ -46,7 +46,7 @@ function check_gemini_update() {
 function gemini() {
   ensure_docker_running
   ensure_ssh_loaded
-  
+
   local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
   local TARGET_DIR
   local STATE_DIR
@@ -56,11 +56,11 @@ function gemini() {
   local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
   local GIT_CONFIG="$HOME/.gitconfig"
   local SSH_CONFIG_SRC="$HOME/.ssh/config"
-  
+
   local IS_INTERACTIVE=false
   local DOCKER_FLAGS="-i"
 
-  if [ -t 1 ] && [ -z "$1" ]; then 
+  if [ -t 1 ] && [ -z "$1" ]; then
     DOCKER_FLAGS="-it"
     IS_INTERACTIVE=true
   fi
@@ -77,7 +77,7 @@ function gemini() {
     TARGET_DIR="$(pwd)"
     STATE_DIR="$HOME/.docker-gemini-config/global_state"
   fi
-  
+
   local PROJECT_NAME=$(basename "$TARGET_DIR")
   local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
 
@@ -128,10 +128,10 @@ function gexec() {
   local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
   local TARGET_DIR
   if [[ -n "$GIT_ROOT" ]]; then TARGET_DIR="$GIT_ROOT"; else TARGET_DIR="$(pwd)"; fi
-  
+
   local PROJECT_NAME=$(basename "$TARGET_DIR")
   local CONTAINER_WORKDIR="/app/$PROJECT_NAME"
-  
+
   local SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
   local GIT_CONFIG="$HOME/.gitconfig"
   local GH_CONFIG_DIR="$HOME/.docker-gemini-config/gh_config"
@@ -139,7 +139,7 @@ function gexec() {
   local TMP_DIR="$HOME/.docker-gemini-config/tmp_exec"
   mkdir -p "$TMP_DIR"
   local SSH_CONFIG_CLEAN="$TMP_DIR/ssh_config_clean"
-  
+
   if [[ -f "$SSH_CONFIG_SRC" ]]; then
     grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
   else

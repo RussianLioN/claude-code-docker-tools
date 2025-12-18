@@ -124,7 +124,7 @@ function check_updates() {
 function prepare_configuration() {
   # Check and migrate credentials if needed
   # check_and_migrate_credentials  <-- DISABLED to prevent restoring bad credentials
-  
+
   # Expert sync-in pattern based on old-scripts/gemini.zsh
   local GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
@@ -132,7 +132,7 @@ function prepare_configuration() {
     export TARGET_DIR="$GIT_ROOT"
     # export STATE_DIR="$GIT_ROOT/.ai-state" # DISABLED: Local state causes auth fragmentation
     export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state" # ENABLED: Force global state for consistent auth
-    
+
     # Calculate relative path from git root to current dir
     # This ensures we land in the correct subdirectory inside the container
     local RELATIVE_PATH="${PWD#$GIT_ROOT}"
@@ -143,14 +143,14 @@ function prepare_configuration() {
     export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state"
     local RELATIVE_PATH=""
   fi
-  
+
   # Unified state directory for Claude within the project or global state
   export CLAUDE_STATE_DIR="$STATE_DIR/claude_config"
   export GLM_STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state/glm_config"
   mkdir -p "$GLM_STATE_DIR"
 
   local PROJECT_NAME=$(basename "$TARGET_DIR")
-  
+
   # Ensure PROJECT_NAME is not empty and valid
   if [[ -z "$PROJECT_NAME" || "$PROJECT_NAME" == "/" ]]; then
     PROJECT_NAME="project"
@@ -161,7 +161,7 @@ function prepare_configuration() {
   #    This ensures the project name is visible in the UI.
   # 2. If we are in a subdirectory (RELATIVE_PATH exists), we mount the root to /workspace
   #    This hides the parent directory name (e.g. "test") and shows the subdirectory path directly (e.g. /workspace/claude-docker-test)
-  
+
   if [[ -z "$RELATIVE_PATH" ]]; then
     export CONTAINER_BASE_DIR="/workspace/$PROJECT_NAME"
     export CONTAINER_WORKDIR="$CONTAINER_BASE_DIR"
@@ -229,7 +229,7 @@ function cleanup_configuration() {
     echo "📦 Sandbox режим: пропускаю синхронизацию конфигурации" >&2
     return 0
   fi
-  
+
   # Standard sync-out pattern
   if [[ -f "$STATE_DIR/google_accounts.json" ]]; then
     cp "$STATE_DIR/google_accounts.json" "$GLOBAL_AUTH" 2>/dev/null || true
@@ -242,11 +242,11 @@ function cleanup_configuration() {
   if [[ -f "$STATE_DIR/claude_config.json" ]]; then
     cp "$STATE_DIR/claude_config.json" "$CLAUDE_CONFIG" 2>/dev/null || true
   fi
-  
+
   if [[ -f "$STATE_DIR/glm_config.json" ]]; then
     cp "$STATE_DIR/glm_config.json" "$GLM_CONFIG" 2>/dev/null || true
   fi
-  
+
   # Sync-out Claude State (Expert Pattern: Manual Copy due to bind mount issues)
   # We use a temporary container to copy files from the volume/directory if needed,
   # but since we bind mount, we expect persistence.
@@ -270,7 +270,7 @@ function run_ephemeral_container() {
   # Smart image selection for AI providers
   local ai_image="claude-code-tools"
   # We use the unified image for both modes now
-  
+
   # Ensure variables are set
   if [[ -z "${TARGET_DIR}" || -z "${CONTAINER_WORKDIR}" || -z "${STATE_DIR}" ]]; then
     echo "❌ Ошибка: переменные не установлены. Вызовите prepare_configuration() сначала." >&2
@@ -283,7 +283,7 @@ function run_ephemeral_container() {
     # DEBUG: Show command and env vars
     # echo "DEBUG: Running docker with project_id=$project_id" >&2
     # echo "DEBUG: Env vars: ${env_vars[@]}" >&2
-    
+
     docker run $DOCKER_FLAGS --name "claude-session-$(date +%s)" \
       --entrypoint "$command" \
       --network host \
@@ -312,7 +312,7 @@ function run_ephemeral_container() {
       if [[ -z "$zai_key" && -f "$DOCKER_AI_CONFIG_HOME/global_state/secrets/zai_key" ]]; then
          zai_key=$(cat "$DOCKER_AI_CONFIG_HOME/global_state/secrets/zai_key")
       fi
-      
+
       if [[ -z "$zai_key" ]]; then
          echo "❌ Ошибка: ZAI_API_KEY не найден." >&2
          echo "   Установите переменную окружения ZAI_API_KEY или сохраните ключ в secrets." >&2
@@ -320,7 +320,7 @@ function run_ephemeral_container() {
       fi
 
        local glm_settings_file="$GLM_STATE_DIR/settings.json"
-       
+
        # Generate comprehensive settings.json based on Z.AI requirements
        cat > "$glm_settings_file" <<EOF
 {
@@ -348,7 +348,7 @@ EOF
 
         # FORCE AI_MODE=claude so entrypoint.sh launches claude binary
         env_vars+=("-e" "AI_MODE=claude")
-        
+
         # INJECT ENV VARS FOR ROBUSTNESS (Double Tap)
         # Even if config file is ignored, these env vars will force the SDK to use Z.AI
         env_vars+=("-e" "ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic")
@@ -356,11 +356,11 @@ EOF
 
         local container_name="glm-session-$(date +%s)"
         local container_hostname="glm-dev-env"
-        
+
         # EXACT CLONE OF CLAUDE MOUNT LOGIC
         # Mounting to /root/.claude-config because that's what works for Claude
         local active_state_dir="${GLM_STATE_DIR}"
-  
+
         docker run $DOCKER_FLAGS --name "$container_name" \
           --hostname "$container_hostname" \
           --network host \
@@ -376,9 +376,9 @@ EOF
           -v "${TARGET_DIR}":"${CONTAINER_BASE_DIR}" \
           -v "${STATE_DIR}":/root/.gemini \
           "$ai_image" "$@"
-          
+
         local exit_code=$?
-        
+
         echo "💾 Сохранение сессии GLM..." >&2
       mkdir -p "$GLM_STATE_DIR"
       chmod 755 "$GLM_STATE_DIR" 2>/dev/null || true
@@ -387,7 +387,7 @@ EOF
       else
          echo "⚠️ Ошибка сохранения сессии GLM." >&2
       fi
-      
+
       docker rm -f "$container_name" >/dev/null 2>&1
       return $exit_code
 
@@ -402,16 +402,16 @@ EOF
     elif [[ "$command" == "gemini" ]]; then
       env_vars=()
     fi
-    
+
     # Set GOOGLE_CLOUD_PROJECT
     local project_id="${GOOGLE_CLOUD_PROJECT:-claude-code-docker-tools}"
     if [[ -n "$project_id" ]]; then
       env_vars+=("-e" "GOOGLE_CLOUD_PROJECT=$project_id")
     fi
-    
+
     local container_name="claude-session-$(date +%s)"
     local container_hostname="claude-dev-env"
-    
+
     docker run $DOCKER_FLAGS --name "$container_name" \
       --hostname "$container_hostname" \
       --network host \
@@ -428,9 +428,9 @@ EOF
       -v "${STATE_DIR}":/root/.gemini \
       --entrypoint "/bin/sh" \
       "$ai_image" -c "claude $@; echo '👋 Claude завершен. Запуск отладочного шелла...'; exec /bin/bash"
-      
+
     local exit_code=$?
-    
+
     # Expert Sync-Out: Manually copy config back to host
     # This bypasses bind mount issues by explicitly copying files
     if [[ "$command" == "claude" ]]; then
@@ -438,7 +438,7 @@ EOF
       mkdir -p "$CLAUDE_STATE_DIR"
       # Ensure destination directory has write permissions
       chmod 755 "$CLAUDE_STATE_DIR" 2>/dev/null || true
-      
+
       # Copy content of .claude-config to host state dir
       # Note: using /. to copy contents, not directory itself
       if docker cp "$container_name":/root/.claude-config/. "$CLAUDE_STATE_DIR/" >/dev/null 2>&1; then
@@ -449,7 +449,7 @@ EOF
          docker cp "$container_name":/root/.claude-config/.credentials.json "$CLAUDE_STATE_DIR/" >/dev/null 2>&1
       fi
     fi
-    
+
     # Cleanup container
     # DEBUG MODE: Disabled. Production behavior restored.
     # For debugging, comment out the next line:
@@ -459,7 +459,7 @@ EOF
     echo "   Конфиги: /root/.claude-config" >&2
     echo "   Env: env | grep ANTHROPIC" >&2
     echo "   Для удаления: docker rm -f $container_name" >&2
-     
+
     return $exit_code
   fi
 }

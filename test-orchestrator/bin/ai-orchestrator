@@ -21,7 +21,7 @@ AI Orchestrator v2.0.0
 
 Режимы:
   gemini, g    - Google Gemini
-  claude, c    - Anthropic Claude Code  
+  claude, c    - Anthropic Claude Code
   glm, z       - GLM-4.6 (Z.AI)
 
 Команды:
@@ -43,13 +43,13 @@ orchestrate() {
     local mode="${1:-}"
     local command="${2:-help}"
     shift 2 || true
-    
+
     # Handle help case
     if [[ "$mode" == "help" || "$mode" == "--help" || "$mode" == "-h" ]]; then
         show_usage
         return 0
     fi
-    
+
     # Validate mode
     case "$mode" in
         gemini|g) mode="gemini" ;;
@@ -58,7 +58,7 @@ orchestrate() {
         "") show_usage; return 0 ;;
         *) echo "Ошибка: Неизвестный режим: $mode" >&2; show_usage; return 1 ;;
     esac
-    
+
     echo "Модуль: $mode, команда: $command"
     return 0
 }

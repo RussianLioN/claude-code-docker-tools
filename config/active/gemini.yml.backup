@@ -23,13 +23,13 @@ gemini:
   top_k: 40
   candidate_count: 1
   google_cloud_project: "claude-code-docker-tools"
-  
+
 # Workspace Configuration
 workspace:
   base_dir: "./workspace/gemini"
   config_dir: "./config/active/gemini"
   mount_point: "/home/gemini/.gemini-config"
-  
+
 # Plugins and Extensions
 plugins:
   enabled:
@@ -37,7 +37,7 @@ plugins:
     - git-integration
     - project-tools
     - code-analysis
-  
+
   mcp_servers:
     - name: "filesystem"
       command: "npx -y @modelcontextprotocol/server-filesystem"
@@ -57,7 +57,7 @@ development:
   verbose: false
   auto_save: true
   backup_sessions: true
-  
+
 # Security Settings
 security:
   isolate_network: false
@@ -70,7 +70,7 @@ monitoring:
   health_check: true
   metrics: true
   logs: true
-  
+
 # Backup Configuration
 backup:
   enabled: true

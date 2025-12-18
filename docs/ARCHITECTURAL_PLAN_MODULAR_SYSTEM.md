@@ -8,6 +8,7 @@
 ---
 
 ## 📋 Содержание
+
 1. [Анализ текущих проблем](#1-анализ-текущих-проблем)
 2. [Требования и спецификации](#2-требования-и-спецификации)
 3. [Архитектурные решения](#3-архитектурные-решения)
@@ -20,11 +21,13 @@
 ## 1. Анализ текущих проблем
 
 ### 🚨 Критические конфликты авторизации
+
 - **Claude Code:** ✅ Работает корректно
 - **Gemini:** ❌ Запрашивает авторизацию Claude вместо Google OAuth
 - **GLM (Z.AI):** ❌ Запрашивает авторизацию Claude вместо подключения к Z.AI API
 
 ### 🔍 Корневая причина
+
 ```bash
 # Строки 350-390 в ai-assistant.zsh:
 # - GLM mode принудительно устанавливает AI_MODE=claude
@@ -38,6 +41,7 @@
 ## 2. Требования и спецификации
 
 ### 📋 Функциональные требования
+
 | ID | Требование | Приоритет | Статус |
 |----|------------|-----------|--------|
 | FR-001 | Изоляция переменных окружения между режимами | P0 | ❌ |
@@ -47,6 +51,7 @@
 | FR-005 | Система логирования и отладки | P2 | ✅ |
 
 ### 🔧 Технические спецификации
+
 - **Изоляция окружения:** Каждый режим использует только свои переменные
 - **Монтирование:** Раздельные пути `/root/.{gemini,claude,glm}-config`
 - **Переменные:** Префиксы `GEMINI_*`, `CLAUDE_*`, `GLM_*` для изоляции
@@ -58,6 +63,7 @@
 ## 3. Архитектурные решения
 
 ### 🏛️ Целевая архитектура
+
 ```
 ~/.docker-ai-tools/
 ├── lib/
@@ -79,6 +85,7 @@
 ```
 
 ### 🔗 Принципы изоляции
+
 1. **Переменные окружения:** Префиксы по режимам
 2. **Файловая система:** Раздельные директории конфигурации
 3. **Сетевые ресурсы:** Изолированные сессии
@@ -89,6 +96,7 @@
 ## 4. Детализированный план реализации
 
 ### 📊 Обзор этапов
+
 | Этап | Название | Длительность | Критические задачи | Критерии успеха |
 |------|----------|--------------|-------------------|-----------------|
 | 1 | Анализ и подготовка | 4-6 часов | Изоляция переменных, создание библиотеки | Все режимы запускаются без конфликтов |
@@ -103,14 +111,16 @@
 
 #### 🎯 Цель: Устранить критические конфликты авторизации
 
-#### 📋 Подзадачи:
+#### 📋 Подзадачи
 
 **1.1. Анализ текущих конфликтов (30 мин)**
+
 - Запустить `./test-ai-isolation.sh`
 - Документировать точные конфликты
 - Создать отчет о проблемах
 
 **1.2. Создание изоляционного враппера (1 час)**
+
 ```bash
 # Создать ~/.docker-ai-config/isolate-modes.sh
 cat > ~/.docker-ai-config/isolate-modes.sh << 'EOF'
@@ -140,6 +150,7 @@ chmod +x ~/.docker-ai-config/isolate-modes.sh
 ```
 
 **1.3. Быстрое исправление в ai-assistant.zsh (2 часа)**
+
 ```bash
 # Заменить строки 350-390 на изолированную версию
 if [[ "$command" == "glm" ]]; then
@@ -160,6 +171,7 @@ fi
 ```
 
 **1.4. Тестирование изоляции (1 час)**
+
 ```bash
 # Тест каждого режима
 source ~/.docker-ai-config/isolate-modes.sh
@@ -168,7 +180,8 @@ echo "Testing GLM..." && isolate_glm --help
 echo "Testing Claude..." && isolate_claude --help
 ```
 
-#### ✅ Критерии завершения:
+#### ✅ Критерии завершения
+
 - [ ] Все три режима запускаются без конфликтов
 - [ ] Каждый режим использует свои переменные окружения
 - [ ] Отсутствует cross-contamination между режимами
@@ -180,15 +193,17 @@ echo "Testing Claude..." && isolate_claude --help
 
 #### 🎯 Цель: Реализовать раздельные mount points и переменные окружения
 
-#### 📋 Подзадачи:
+#### 📋 Подзадачи
 
 **2.1. Создание структуры директорий (30 мин)**
+
 ```bash
 mkdir -p ~/.docker-ai-tools/{lib,modules,bin,config/{gemini,claude,glm},logs}
 mkdir -p ~/.docker-ai-config/{gemini_state,claude_state,glm_state}
 ```
 
 **2.2. Реализация конфигурационной системы (2 часа)**
+
 ```bash
 # Создать ~/.docker-ai-tools/lib/config-manager.sh
 cat > ~/.docker-ai-tools/lib/config-manager.sh << 'EOF'
@@ -199,7 +214,7 @@ get_mode_config() {
     local mode="$1"
     local key="$2"
     local config_file="$HOME/.docker-ai-config/${mode}_state/config.json"
-    
+
     if [[ -f "$config_file" ]]; then
         jq -r ".${key} // empty" "$config_file" 2>/dev/null
     fi
@@ -210,9 +225,9 @@ set_mode_config() {
     local key="$2"
     local value="$3"
     local config_file="$HOME/.docker-ai-config/${mode}_state/config.json"
-    
+
     mkdir -p "$(dirname "$config_file")"
-    
+
     if [[ -f "$config_file" ]]; then
         jq ".${key} = \"$value\"" "$config_file" > "$config_file.tmp" && mv "$config_file.tmp" "$config_file"
     else
@@ -223,17 +238,17 @@ set_mode_config() {
 validate_mode_config() {
     local mode="$1"
     local config_file="$HOME/.docker-ai-config/${mode}_state/config.json"
-    
+
     if [[ ! -f "$config_file" ]]; then
         echo "{\"error\": \"Config file not found\"}"
         return 1
     fi
-    
+
     if ! jq empty "$config_file" 2>/dev/null; then
         echo "{\"error\": \"Invalid JSON\"}"
         return 1
     fi
-    
+
     return 0
 }
 EOF
@@ -241,6 +256,7 @@ chmod +x ~/.docker-ai-tools/lib/config-manager.sh
 ```
 
 **2.3. Система логирования (1 час)**
+
 ```bash
 # Создать ~/.docker-ai-tools/lib/logger.sh
 cat > ~/.docker-ai-tools/lib/logger.sh << 'EOF'
@@ -261,7 +277,7 @@ log_message() {
     local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     local log_file="$LOG_DIR/ai-$(date +%Y%m%d).log"
-    
+
     mkdir -p "$LOG_DIR"
     echo "[$timestamp] [$level] $message" | tee -a "$log_file"
 }
@@ -270,6 +286,7 @@ chmod +x ~/.docker-ai-tools/lib/logger.sh
 ```
 
 **2.4. Docker менеджер с изоляцией (2 часа)**
+
 ```bash
 # Создать ~/.docker-ai-tools/lib/docker-manager.sh
 cat > ~/.docker-ai-tools/lib/docker-manager.sh << 'EOF'
@@ -283,22 +300,22 @@ run_ai_container() {
     local image="$2"
     local command="$3"
     local extra_args="$4"
-    
+
     local container_name="${mode}-session-$(date +%s)"
     local state_dir="$HOME/.docker-ai-config/${mode}_state"
     local mount_point="/root/.${mode}-config"
-    
+
     log_info "Запуск контейнера для режима: $mode"
     log_debug "Контейнер: $container_name"
     log_debug "Образ: $image"
     log_debug "Команда: $command"
     log_debug "Mount point: $mount_point"
-    
+
     # Установить режим-специфичные переменные
     local -a env_vars=()
     env_vars+=("-e" "AI_MODE=$mode")
     env_vars+=("-e" "${mode^^}_MODE=1")
-    
+
     # Добавить режим-специфичные API ключи
     case "$mode" in
         gemini)
@@ -315,7 +332,7 @@ run_ai_container() {
             [[ -n "$claude_key" ]] && env_vars+=("-e" "CLAUDE_API_KEY=$claude_key")
             ;;
     esac
-    
+
     # Запустить контейнер с изоляцией
     docker run --rm \
         --name "$container_name" \
@@ -333,12 +350,12 @@ validate_docker_environment() {
         log_error "Docker не установлен"
         return 1
     fi
-    
+
     if ! docker info &> /dev/null; then
         log_error "Docker daemon не запущен"
         return 1
     fi
-    
+
     return 0
 }
 EOF
@@ -346,6 +363,7 @@ chmod +x ~/.docker-ai-tools/lib/docker-manager.sh
 ```
 
 **2.5. Тестирование изоляции (30 мин)**
+
 ```bash
 # Тест каждого режима с новой системой
 source ~/.docker-ai-tools/lib/logger.sh
@@ -365,7 +383,8 @@ log_info "Тестирование Claude изоляции..."
 run_ai_container "claude" "claude-code-tools" "echo 'Claude mode test'" ""
 ```
 
-#### ✅ Критерии завершения:
+#### ✅ Критерии завершения
+
 - [ ] Каждый режим имеет свой mount point
 - [ ] Переменные окружения изолированы по режимам
 - [ ] Конфигурационные файлы валидируются
@@ -377,9 +396,10 @@ run_ai_container "claude" "claude-code-tools" "echo 'Claude mode test'" ""
 
 #### 🎯 Цель: Создать независимые модули для каждого AI-сервиса
 
-#### 📋 Подзадачи:
+#### 📋 Подзадачи
 
 **3.1. Создание модуля Gemini (3 часа)**
+
 ```bash
 # Создать ~/.docker-ai-tools/modules/gemini.sh
 cat > ~/.docker-ai-tools/modules/gemini.sh << 'EOF'
@@ -406,13 +426,13 @@ ai_gemini_start() {
     local args="$*"
     log_info "Запуск Google Gemini"
     log_debug "Аргументы: $args"
-    
+
     # Валидация окружения
     if ! validate_docker_environment; then
         log_error "Docker окружение не валидно"
         return 1
     fi
-    
+
     # Запуск контейнера
     run_ai_container "$MODULE_NAME" "$DOCKER_IMAGE" "gemini $args" ""
 }
@@ -426,7 +446,7 @@ ai_gemini_stop() {
 ai_gemini_status() {
     log_info "Статус Google Gemini"
     local running_containers=$(docker ps --format "{{.Names}}" | grep "^gemini-session-" | wc -l)
-    
+
     if [[ $running_containers -gt 0 ]]; then
         log_info "Активных контейнеров: $running_containers"
         docker ps --format "table {{.Names}}\t{{.Status}}" | grep "gemini-session"
@@ -439,7 +459,7 @@ ai_gemini_status() {
 main() {
     local command="${1:-help}"
     shift || true
-    
+
     case "$command" in
         start|s) ai_gemini_start "$@" ;;
         stop|x) ai_gemini_stop "$@" ;;
@@ -455,6 +475,7 @@ chmod +x ~/.docker-ai-tools/modules/gemini.sh
 ```
 
 **3.2. Создание модуля GLM (3 часа)**
+
 ```bash
 # Создать ~/.docker-ai-tools/modules/glm.sh
 cat > ~/.docker-ai-tools/modules/glm.sh << 'EOF'
@@ -482,13 +503,13 @@ ai_glm_start() {
     local args="$*"
     log_info "Запуск GLM-4.6 (Z.AI)"
     log_debug "Аргументы: $args"
-    
+
     # Валидация окружения
     if ! validate_docker_environment; then
         log_error "Docker окружение не валидно"
         return 1
     fi
-    
+
     # Проверка ZAI API ключа
     local zai_key=$(get_mode_config "glm" "api_key")
     if [[ -z "$zai_key" ]]; then
@@ -497,17 +518,17 @@ ai_glm_start() {
             zai_key=$(cat "$HOME/.docker-ai-config/global_state/secrets/zai_key")
         fi
     fi
-    
+
     if [[ -z "$zai_key" ]]; then
         log_error "ZAI API ключ не найден"
         log_info "Установите ZAI_API_KEY или сохраните ключ в ~/.docker-ai-config/global_state/secrets/zai_key"
         return 1
     fi
-    
+
     # Создать конфигурацию GLM
     local glm_config_file="$HOME/.docker-ai-config/glm_state/settings.json"
     mkdir -p "$(dirname "$glm_config_file")"
-    
+
     cat > "$glm_config_file" << JSON
 {
   "ANTHROPIC_AUTH_TOKEN": "$zai_key",
@@ -525,9 +546,9 @@ ai_glm_start() {
   }
 }
 JSON
-    
+
     log_debug "Создана конфигурация GLM в: $glm_config_file"
-    
+
     # Запуск контейнера с Z.AI настройками
     local extra_args="-v $HOME/.docker-ai-config/glm_state:/root/.claude-config"
     run_ai_container "$MODULE_NAME" "$DOCKER_IMAGE" "claude $args" "$extra_args"
@@ -542,7 +563,7 @@ ai_glm_stop() {
 ai_glm_status() {
     log_info "Статус GLM-4.6 (Z.AI)"
     local running_containers=$(docker ps --format "{{.Names}}" | grep "^glm-session-" | wc -l)
-    
+
     if [[ $running_containers -gt 0 ]]; then
         log_info "Активных контейнеров: $running_containers"
         docker ps --format "table {{.Names}}\t{{.Status}}" | grep "glm-session"
@@ -555,7 +576,7 @@ ai_glm_status() {
 main() {
     local command="${1:-help}"
     shift || true
-    
+
     case "$command" in
         start|s) ai_glm_start "$@" ;;
         stop|x) ai_glm_stop "$@" ;;
@@ -571,6 +592,7 @@ chmod +x ~/.docker-ai-tools/modules/glm.sh
 ```
 
 **3.3. Создание модуля Claude (2 часа)**
+
 ```bash
 # Создать ~/.docker-ai-tools/modules/claude.sh
 cat > ~/.docker-ai-tools/modules/claude.sh << 'EOF'
@@ -597,13 +619,13 @@ ai_claude_start() {
     local args="$*"
     log_info "Запуск Anthropic Claude Code"
     log_debug "Аргументы: $args"
-    
+
     # Валидация окружения
     if ! validate_docker_environment; then
         log_error "Docker окружение не валидно"
         return 1
     fi
-    
+
     # Запуск контейнера
     run_ai_container "$MODULE_NAME" "$DOCKER_IMAGE" "claude $args" ""
 }
@@ -617,7 +639,7 @@ ai_claude_stop() {
 ai_claude_status() {
     log_info "Статус Anthropic Claude Code"
     local running_containers=$(docker ps --format "{{.Names}}" | grep "^claude-session-" | wc -l)
-    
+
     if [[ $running_containers -gt 0 ]]; then
         log_info "Активных контейнеров: $running_containers"
         docker ps --format "table {{.Names}}\t{{.Status}}" | grep "claude-session"
@@ -630,7 +652,7 @@ ai_claude_status() {
 main() {
     local command="${1:-help}"
     shift || true
-    
+
     case "$command" in
         start|s) ai_claude_start "$@" ;;
         stop|x) ai_claude_stop "$@" ;;
@@ -646,6 +668,7 @@ chmod +x ~/.docker-ai-tools/modules/claude.sh
 ```
 
 **3.4. Тестирование модулей (2 часа)**
+
 ```bash
 # Тест каждого модуля
 source ~/.docker-ai-tools/lib/logger.sh
@@ -656,7 +679,7 @@ log_info "Тестирование модулей..."
 echo "=== Claude Module Test ==="
 ~/.docker-ai-tools/modules/claude.sh status
 
-# Тест Gemini модуля  
+# Тест Gemini модуля
 echo "=== Gemini Module Test ==="
 ~/.docker-ai-tools/modules/gemini.sh status
 
@@ -665,7 +688,8 @@ echo "=== GLM Module Test ==="
 ~/.docker-ai-tools/modules/glm.sh status
 ```
 
-#### ✅ Критерии завершения:
+#### ✅ Критерии завершения
+
 - [ ] Каждый модуль запускается изолированно
 - [ ] Модули не конфликтуют между собой
 - [ ] Собственные переменные окружения для каждого модуля
@@ -677,9 +701,10 @@ echo "=== GLM Module Test ==="
 
 #### 🎯 Цель: Объединить все компоненты и провести комплексное тестирование
 
-#### 📋 Подзадачи:
+#### 📋 Подзадачи
 
 **4.1. Создание центрального оркестратора (1 час)**
+
 ```bash
 # Создать ~/.docker-ai-tools/bin/ai-orchestrator
 cat > ~/.docker-ai-tools/bin/ai-orchestrator << 'EOF'
@@ -706,7 +731,7 @@ AI Orchestrator v2.0.0
 
 Режимы:
   gemini, g    - Google Gemini
-  claude, c    - Anthropic Claude Code  
+  claude, c    - Anthropic Claude Code
   glm, z       - GLM-4.6 (Z.AI)
 
 Команды:
@@ -728,7 +753,7 @@ orchestrate() {
     local mode="${1:-}"
     local command="${2:-help}"
     shift 2 || true
-    
+
     # Validate mode
     case "$mode" in
         gemini|g) mode="gemini" ;;
@@ -737,21 +762,21 @@ orchestrate() {
         "") show_usage; return 0 ;;
         *) log_error "Неизвестный режим: $mode"; show_usage; return 1 ;;
     esac
-    
+
     # Validate command
     case "$command" in
         start|stop|status|help) ;;
         *) log_error "Неизвестная команда: $command"; show_usage; return 1 ;;
     esac
-    
+
     # Execute module
     local module_script="$MODULES_DIR/$mode.sh"
-    
+
     if [[ ! -f "$module_script" ]]; then
         log_error "Модуль не найден: $module_script"
         return 1
     fi
-    
+
     log_info "Запуск модуля: $mode $command"
     exec "$module_script" "$command" "$@"
 }
@@ -767,10 +792,11 @@ chmod +x ~/.docker-ai-tools/bin/ai-orchestrator
 ```
 
 **4.2. Создание симлинков для обратной совместимости (30 мин)**
+
 ```bash
 # Создать симлинки для старых команд
 ln -sf ~/.docker-ai-tools/bin/ai-orchestrator ~/.docker-ai-tools/bin/gemini
-ln -sf ~/.docker-ai-tools/bin/ai-orchestrator ~/.docker-ai-tools/bin/claude  
+ln -sf ~/.docker-ai-tools/bin/ai-orchestrator ~/.docker-ai-tools/bin/claude
 ln -sf ~/.docker-ai-tools/bin/ai-orchestrator ~/.docker-ai-tools/bin/glm
 
 # Добавить в PATH
@@ -778,6 +804,7 @@ export PATH="$HOME/.docker-ai-tools/bin:$PATH"
 ```
 
 **4.3. Создание meta-скрипта для обратной совместимости (1 час)**
+
 ```bash
 # Создать обновленный ai-assistant.zsh с делегацией
 cat > ~/.docker-ai-tools/ai-assistant.zsh << 'EOF'
@@ -800,6 +827,7 @@ chmod +x ~/.docker-ai-tools/ai-assistant.zsh
 ```
 
 **4.4. Комплексное тестирование (2 часа)**
+
 ```bash
 # Создать тестовый сценарий ~/.docker-ai-tools/tests/integration-test.sh
 cat > ~/.docker-ai-tools/tests/integration-test.sh << 'EOF'
@@ -821,11 +849,11 @@ TESTS_FAILED=0
 # Test functions
 test_mode_isolation() {
     echo -e "${YELLOW}Тест: Изоляция режимов${NC}"
-    
+
     # Test environment isolation
     for mode in gemini claude glm; do
         echo -n "  Проверка изоляции $mode... "
-        
+
         # Check that mode doesn't have other mode's variables
         case "$mode" in
             gemini)
@@ -857,11 +885,11 @@ test_mode_isolation() {
 
 test_container_isolation() {
     echo -e "${YELLOW}Тест: Изоляция контейнеров${NC}"
-    
+
     # Test container creation for each mode
     for mode in gemini claude glm; do
         echo -n "  Проверка контейнера $mode... "
-        
+
         # Run container in test mode
         if ~/.docker-ai-tools/modules/$mode.sh status >/dev/null 2>&1; then
             echo -e "${GREEN}PASS${NC}"
@@ -875,7 +903,7 @@ test_container_isolation() {
 
 test_orchestrator_functionality() {
     echo -e "${YELLOW}Тест: Функциональность оркестратора${NC}"
-    
+
     # Test orchestrator help
     echo -n "  Проверка справки оркестратора... "
     if ~/.docker-ai-tools/bin/ai-orchestrator help >/dev/null 2>&1; then
@@ -885,7 +913,7 @@ test_orchestrator_functionality() {
         echo -e "${RED}FAIL${NC}"
         ((TESTS_FAILED++))
     fi
-    
+
     # Test orchestrator with each mode
     for mode in gemini claude glm; do
         echo -n "  Проверка оркестратора $mode... "
@@ -901,10 +929,10 @@ test_orchestrator_functionality() {
 
 test_backward_compatibility() {
     echo -e "${YELLOW}Тест: Обратная совместимость${NC}"
-    
+
     # Test that old commands still work
     echo -n "  Проверка обратной совместимости... "
-    
+
     # Check if old functions exist
     if command -v gemini &> /dev/null && command -v claude &> /dev/null && command -v glm &> /dev/null; then
         echo -e "${GREEN}PASS${NC}"
@@ -919,7 +947,7 @@ test_backward_compatibility() {
 main() {
     echo -e "${YELLOW}🚀 Запуск интеграционного тестирования${NC}"
     echo "=================================="
-    
+
     test_mode_isolation
     echo
     test_container_isolation
@@ -928,12 +956,12 @@ main() {
     echo
     test_backward_compatibility
     echo
-    
+
     echo "=================================="
     echo -e "${YELLOW}Результаты тестирования:${NC}"
     echo -e "Пройдено: ${GREEN}$TESTS_PASSED${NC}"
     echo -e "Провалено: ${RED}$TESTS_FAILED${NC}"
-    
+
     if [[ $TESTS_FAILED -eq 0 ]]; then
         echo -e "${GREEN}🎉 Все тесты пройдены!${NC}"
         exit 0
@@ -949,12 +977,14 @@ chmod +x ~/.docker-ai-tools/tests/integration-test.sh
 ```
 
 **4.5. Запуск интеграционного тестирования (30 мин)**
+
 ```bash
 # Запустить интеграционные тесты
 ~/.docker-ai-tools/tests/integration-test.sh
 ```
 
-#### ✅ Критерии завершения:
+#### ✅ Критерии завершения
+
 - [ ] Все интеграционные тесты проходят
 - [ ] Нет конфликтов между режимами
 - [ ] Обратная совместимость работает
@@ -966,9 +996,10 @@ chmod +x ~/.docker-ai-tools/tests/integration-test.sh
 
 #### 🎯 Цель: Подготовить полную документацию и выпустить релиз
 
-#### 📋 Подзадачи:
+#### 📋 Подзадачи
 
 **5.1. Обновление README.md (30 мин)**
+
 ```markdown
 # Добавить в README.md:
 ## Новая модульная система (v2.0)
@@ -981,6 +1012,7 @@ source ~/.docker-ai-config/isolate-modes.sh
 ```
 
 ### Использование
+
 ```bash
 # Новый способ (рекомендованный)
 ai-orchestrator gemini start
@@ -994,9 +1026,11 @@ glm stop
 ```
 
 ### Архитектура
+
 - **Модули:** Независимые скрипты для каждого AI
 - **Изоляция:** Раздельные переменные и mount points
 - **Логирование:** Структурированные логи для каждого режима
+
 ```
 
 **5.2. Создание CHANGELOG.md (30 мин)**
@@ -1024,6 +1058,7 @@ glm stop
 ```
 
 **5.3. Создание руководства по миграции (1 час)**
+
 ```bash
 # Создать ~/.docker-ai-tools/MIGRATION_GUIDE.md
 cat > ~/.docker-ai-tools/MIGRATION_GUIDE.md << 'EOF'
@@ -1038,6 +1073,7 @@ source ~/.zshrc
 ```
 
 2. **Протестировать:**
+
 ```bash
 ai-orchestrator gemini status
 ai-orchestrator claude status
@@ -1045,6 +1081,7 @@ ai-orchestrator glm status
 ```
 
 3. **Использовать новые команды:**
+
 ```bash
 ai-orchestrator gemini start
 ai-orchestrator claude start
@@ -1054,12 +1091,15 @@ ai-orchestrator glm start
 ## Подробная миграция
 
 ### 1. Сохранение текущих настроек
+
 ```bash
 cp -r ~/.docker-ai-config ~/.docker-ai-config.backup
 ```
 
 ### 2. Установка новой системы
+
 # Система автоматически создаст необходимые директории
+
 ```
 
 **5.4. Финальное тестирование и релиз (1 час)**
@@ -1085,7 +1125,8 @@ fi
 echo "✅ Релиз готов!"
 ```
 
-#### ✅ Критерии завершения:
+#### ✅ Критерии завершения
+
 - [ ] Документация полная и актуальна
 - [ ] Все примеры кода работают
 - [ ] CHANGELOG.md содержит все изменения
@@ -1097,6 +1138,7 @@ echo "✅ Релиз готов!"
 ## 5. Система отслеживания прогресса
 
 ### 📊 Прогресс-бар по этапам
+
 ```
 Этап 1: [████████░░] 80% - Анализ и подготовка
 Этап 2: [░░░░░░░░░░] 0% - Базовая изоляция
@@ -1106,12 +1148,14 @@ echo "✅ Релиз готов!"
 ```
 
 ### 🎯 Ключевые метрики
+
 - **Время восстановления (MTTR):** С 30 минут до 5 минут
 - **Изоляция режимов:** 100% (никаких конфликтов)
 - **Покрытие тестами:** ≥ 80% критических функций
 - **Совместимость:** 100% (все старые команды работают)
 
 ### 📈 Ежедневный отчет
+
 ```bash
 # Скрипт для генерации отчета о прогрессе
 ~/.docker-ai-tools/scripts/progress-report.sh
@@ -1122,18 +1166,21 @@ echo "✅ Релиз готов!"
 ## 6. Контроль качества
 
 ### 🔍 Проверки качества кода
+
 - **ShellCheck:** Проверка синтаксиса и best practices
 - **Линтеры:** Соблюдение стиля кода
 - **Unit тесты:** Покрытие критических функций
 - **Интеграционные тесты:** Проверка взаимодействия компонентов
 
 ### 🛡️ Безопасность
+
 - **Изоляция:** Никаких пересечений между режимами
 - **Валидация:** Проверка всех входных данных
 - **Логирование:** Полная прозрачность операций
 - **Резервное копирование:** Возможность отката
 
 ### 📊 Метрики качества
+
 - **Надежность:** 99.9% uptime
 - **Производительность:** ≤ 150% от текущего времени
 - **Удобство использования:** Интуитивный интерфейс
@@ -1144,17 +1191,19 @@ echo "✅ Релиз готов!"
 ## 📞 Поддержка и обратная связь
 
 ### 🆘 Экстренная поддержка
+
 - **Issue #1:** Конфликты авторизации - использовать изоляционный враппер
 - **Issue #2:** Сбои в работе - проверить логи в `~/.docker-ai-tools/logs/`
 - **Issue #3:** Проблемы с Docker - запустить `docker system prune`
 
 ### 📧 Контакты
+
 - **GitHub Issues:** [Создать issue](https://github.com/RussianLioN/claude-code-docker-tools/issues)
 - **Документация:** [Wiki](https://github.com/RussianLioN/claude-code-docker-tools/wiki)
 - **Чат:** [Discussions](https://github.com/RussianLioN/claude-code-docker-tools/discussions)
 
 ---
 
-*Последнее обновление: 2025-12-16*  
-*Следующее обновление: По мере выполнения этапов*  
+*Последнее обновление: 2025-12-16*
+*Следующее обновление: По мере выполнения этапов*
 *Ответственный: AI Assistant (Trae IDE)*

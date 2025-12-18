@@ -14,12 +14,14 @@
 ### Эфемерные Контейнеры vs Персистентные
 
 **❌ Старый подход (проблемный)**:
+
 - Персистентные контейнеры с сложным lifecycle management
 - State tracking, health monitoring, auto-recovery
 - Лимиты контейнеров, проблемы с очисткой
 - Сложная синхронизация состояния
 
 **✅ Новый подход (экспертный)**:
+
 - Эфемерные контейнеры с `--rm`
 - Запуск и забывание для каждой операции
 - Автоматическая очистка
@@ -73,6 +75,7 @@
 **Purpose**: Центральная точка оркестрации AI операций
 
 **Экспертные функции**:
+
 ```bash
 # Основные AI функции (экспертный паттерн)
 gemini()      # Docker run --rm gemini-cli "$@"
@@ -88,6 +91,7 @@ ai-mode()     # Переключение AI режимов
 ```
 
 **Экспертные паттерны**:
+
 - **Ephemeral Pattern**: Каждый вызов = новый контейнер с `--rm`
 - **Sync-In/Sync-Out**: Конфигурация синхронизируется при запуске/завершении
 - **Zero Trust**: Секреты никогда не покидают хост
@@ -98,6 +102,7 @@ ai-mode()     # Переключение AI режимов
 **Base Image**: `node:22-alpine`
 
 **Экспертная конфигурация**:
+
 ```bash
 docker run --rm \
   --network host \
@@ -115,6 +120,7 @@ docker run --rm \
 ```
 
 **Ключевые особенности экспертного подхода**:
+
 - `--rm`: Автоматическая очистка контейнера
 - `--network host`: Оптимальная производительность
 - **Adaptive Workspace**: Монтирование в `/workspace` для чистых путей
@@ -124,6 +130,7 @@ docker run --rm \
 #### 3. Configuration Synchronization (Global-First)
 
 **Global State Pattern**:
+
 ```bash
 # Auth всегда берется из глобального хранилища
 export STATE_DIR="$DOCKER_AI_CONFIG_HOME/global_state"
@@ -140,6 +147,7 @@ cp "$GLOBAL_AUTH" "$STATE_DIR/google_accounts.json"
 
 **Флаг `--native`**:
 Позволяет запускать локальную версию Claude (npm) вместо Docker-контейнера.
+
 - **Изоляция**: Использует хостовое окружение (Node.js, авторизация в `~/.claude`).
 - **Use Case**: Для задач, требующих прямого доступа к сложным локальным инструментам или когда Docker недоступен.
 - **Авторизация**: Раздельная (Docker Auth != Native Auth).
@@ -170,6 +178,7 @@ claude-code-docker-tools/
 ### Configuration Management (Экспертный подход)
 
 **Global Configuration** (`~/.docker-gemini-config/` или `~/.docker-ai-config/`):
+
 ```
 ├── google_accounts.json           # OAuth токены
 ├── settings.json                  # Gemini настройки
@@ -179,6 +188,7 @@ claude-code-docker-tools/
 ```
 
 **Project State** (`<project>/.gemini-state/` или `<project>/.ai-state/`):
+
 ```
 ├── google_accounts.json           # Проект-specific аутентификация
 ├── settings.json                  # Проект-specific настройки
@@ -188,12 +198,14 @@ claude-code-docker-tools/
 ### Security Architecture (Экспертный паттерн)
 
 **Zero Trust Implementation**:
+
 - Секреты никогда не покидают диск хоста
 - SSH agent forwarding (не ключи)
 - Изолированная среда выполнения контейнера
 - Автоматический .gitignore для состояния
 
 **SSH Sanitization (экспертный подход)**:
+
 ```bash
 # Удаляется из SSH конфига для совместимости с контейнером
 grep -vE "UseKeychain|AddKeysToAgent|IdentityFile|IdentitiesOnly" "$SSH_CONFIG_SRC" > "$SSH_CONFIG_CLEAN"
@@ -245,12 +257,14 @@ flowchart TD
 ### Container Optimization (Экспертный)
 
 **Runtime Optimization**:
+
 - `--rm`: Автоматическая очистка ресурсов
 - `--network host`: Максимальная производительность
 - Минимальные volume mounts: только необходимые
 - Эфемерность = нет накопления мусора
 
 **Resource Management**:
+
 - Никаких проблем с лимитами контейнеров
 - Автоматическая сборка мусора Docker
 - Постоянное освобождение ресурсов
@@ -259,6 +273,7 @@ flowchart TD
 ### Session Management (Упрощенное)
 
 **Эфемерная архитектура**:
+
 - Никакого health monitoring
 - Никакого state tracking
 - Никакого auto-recovery
@@ -269,6 +284,7 @@ flowchart TD
 ### Changes Required
 
 **1. ai-assistant.zsh**:
+
 ```bash
 # Старый подход (удалить)
 # docker run -d --name persistent-container
@@ -278,12 +294,14 @@ docker run --rm claude-code-tools "$@"
 ```
 
 **2. Legacy Cleanup**:
+
 ```bash
 # ai-session-manager.sh removed
 # All persistent container logic deprecated
 ```
 
 **3. Configuration**:
+
 - Убрать persistent tracking
 - Упростить state management
 - Использовать экспертные паттерны из old-scripts/gemini.zsh
@@ -310,12 +328,14 @@ docker run --rm claude-code-tools "$@"
 ### Scalability Considerations (Экспертный)
 
 **Текущие преимущества**:
+
 - Никаких проблем с масштабированием (эфемерность)
 - Простота деплоя
 - Предсказуемая производительность
 - Минимальные требования к ресурсам
 
 **Будущие улучшения**:
+
 - Batch operations для множественных команд
 - Кэширование конфигураций
 - Параллельные операции

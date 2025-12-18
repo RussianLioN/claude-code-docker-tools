@@ -1,0 +1,39 @@
+# Pre-commit hooks для Claude Code Docker Tools
+repos:
+  # Проверка shell скриптов
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        types: [file]
+        files: \.(sh|zsh|bash|ksh)$
+
+  # Базовые проверки
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-json
+        files: \.json$
+      - id: check-yaml
+        files: \.(yaml|yml)$
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+
+  # Проверка Markdown файлов
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        files: \.md$
+        args: [--fix]
+
+# Конфигурация по умолчанию
+default_language_version:
+  python: python3
+
+# Глобальная конфигурация
+fail_fast: false
+default_stages: [commit]

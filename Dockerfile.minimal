@@ -1,0 +1,42 @@
+# Минимальная версия Docker образа для быстрой разработки
+FROM node:22-alpine
+
+# Установка минимальных зависимостей
+RUN apk add --no-cache \
+    bash \
+    coreutils \
+    git \
+    python3 \
+    make \
+    && rm -rf /var/cache/apk/*
+
+# Установка только основных инструментов
+RUN npm install -g @google/gemini-cli@latest --no-audit --no-fund
+
+# Создание рабочих директорий
+RUN mkdir -p /root/.gemini /root/.ssh && \
+    chmod 700 /root/.ssh
+
+# Настройка локали
+RUN echo "#!/bin/sh" > /usr/bin/locale && \
+    echo "echo C.UTF-8" >> /usr/bin/locale && \
+    chmod +x /usr/bin/locale
+
+# Утилиты для удобства
+RUN echo '#!/bin/bash' > /usr/local/bin/ll && \
+    echo 'ls -lh --color=auto "$@"' >> /usr/local/bin/ll && \
+    chmod +x /usr/local/bin/ll
+
+WORKDIR /app
+
+# Копирование только необходимых файлов
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Минимальные переменные окружения
+ENV NODE_ENV=production
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["--help"]

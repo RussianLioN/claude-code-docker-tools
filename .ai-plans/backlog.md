@@ -11,13 +11,16 @@
 ### 🚀 Phase 2: Advanced Features (Q2 2026)
 
 #### EPIC-201: Plugin System Foundation
+
 **Story Points**: 21 | **Priority**: HIGH
+
 - Define plugin API specification
 - Create plugin development kit
 - Implement hot-loading mechanism
 - Initial plugin: OpenAI integration
 
 **Acceptance Criteria:**
+
 - [ ] Plugin can be loaded/unloaded without restart
 - [ ] Plugin API supports custom commands
 - [ ] Plugin templates available
@@ -26,13 +29,16 @@
 ---
 
 #### EPIC-202: Advanced Monitoring Integration
+
 **Story Points**: 13 | **Priority**: MEDIUM
+
 - Prometheus metrics integration
 - Grafana dashboard creation
 - Alert management system
 - Log aggregation with ELK stack
 
 **Acceptance Criteria:**
+
 - [ ] Prometheus metrics exposed
 - [ ] Grafana dashboard configured
 - [ ] Alerts working for critical metrics
@@ -41,13 +47,16 @@
 ---
 
 #### EPIC-203: Kubernetes Support
+
 **Story Points**: 34 | **Priority**: MEDIUM
+
 - Helm chart creation
 - Multi-node deployment
 - Horizontal pod autoscaling
 - Load balancing strategies
 
 **Acceptance Criteria:**
+
 - [ ] Helm chart deploys successfully
 - [ ] Multi-pod scaling functional
 - [ ] Auto-scaling policies active
@@ -58,13 +67,16 @@
 ### 🏗️ Phase 3: Enterprise Features (Q3 2026)
 
 #### EPIC-301: Team Collaboration
+
 **Story Points**: 40 | **Priority**: HIGH
+
 - Multi-user support
 - Shared workspaces
 - Real-time collaboration
 - Conflict resolution
 
 **Acceptance Criteria:**
+
 - [ ] Multiple users can share sessions
 - [ ] Real-time collaboration working
 - [ ] Automatic conflict resolution
@@ -73,13 +85,16 @@
 ---
 
 #### EPIC-302: Advanced Configuration
+
 **Story Points**: 21 | **Priority**: MEDIUM
+
 - Configuration as Code (CaC)
 - Environment-specific configs
 - Configuration validation
 - Rollback mechanisms
 
 **Acceptance Criteria:**
+
 - [ ] Configs managed via GitOps
 - [ ] Environment isolation working
 - [ ] Config validation prevents errors
@@ -88,13 +103,16 @@
 ---
 
 #### EPIC-303: Enterprise Integration
+
 **Story Points**: 27 | **Priority**: HIGH
+
 - LDAP/Active Directory auth
 - SSO integration
 - RBAC implementation
 - Audit logging
 
 **Acceptance Criteria:**
+
 - [ ] LDAP authentication working
 - [ ] SSO login functional
 - [ ] Role-based access control
@@ -105,13 +123,16 @@
 ### 🤖 Phase 4: AI Enhancement (Q4 2026)
 
 #### EPIC-401: AI Model Expansion
+
 **Story Points**: 25 | **Priority**: HIGH
+
 - GPT-4 integration
 - Local LLM support
 - Custom fine-tuned models
 - Model routing algorithms
 
 **Acceptance Criteria:**
+
 - [ ] GPT-4 API integrated
 - [ ] Local LLM can run locally
 - [ ] Custom models supported
@@ -120,13 +141,16 @@
 ---
 
 #### EPIC-402: Advanced Workflows
+
 **Story Points**: 30 | **Priority**: MEDIUM
+
 - Multi-AI collaboration
 - Chain-of-thought automation
 - Self-improving prompts
 - Learning from interactions
 
 **Acceptance Criteria:**
+
 - [ ] Multiple AI models collaborate
 - [ ] Workflow automation functional
 - [ ] Prompts improve over time
@@ -135,13 +159,16 @@
 ---
 
 #### EPIC-403: Code Intelligence
+
 **Story Points**: 28 | **Priority**: MEDIUM
+
 - Advanced code analysis
 - Automated refactoring
 - Performance optimization
 - Security vulnerability scanning
 
 **Acceptance Criteria:**
+
 - [ ] Code patterns recognized
 - [ ] Automated refactoring safe
 - [ ] Performance improvements detected
@@ -152,13 +179,16 @@
 ## 📋 Technical Debt & Maintenance
 
 ### 🔧 Code Quality Improvements
+
 **Story Points**: 15 | **Priority**: MEDIUM
+
 - Refactor ai-assistant.zsh into modular components
 - Implement proper error handling
 - Add comprehensive test suite (target: 95% coverage)
 - Migrate to TypeScript for better type safety
 
 **Acceptance Criteria:**
+
 - [ ] Code split into logical modules
 - [ ] Error handling consistent
 - [ ] Test coverage >95%
@@ -167,13 +197,16 @@
 ---
 
 ### 🐛 Bug Fixes & Optimizations
+
 **Story Points**: 8 | **Priority**: LOW
+
 - Fix shell script portability issues
 - Optimize startup performance
 - Improve memory usage
 - Enhance error messages
 
 **Acceptance Criteria:**
+
 - [ ] Scripts work on macOS/Linux
 - [ ] Startup time <2s
 - [ ] Memory usage optimized
@@ -184,13 +217,16 @@
 ## 🎨 User Experience Enhancements
 
 ### 📱 CLI Improvements
+
 **Story Points**: 12 | **Priority**: MEDIUM
+
 - Auto-completion support
 - Interactive configuration wizard
 - Progress indicators for long operations
 - Colored output and themes
 
 **Acceptance Criteria:**
+
 - [ ] Tab completion working
 - [ ] Setup wizard guides users
 - [ ] Progress bars for long tasks
@@ -199,13 +235,16 @@
 ---
 
 ### 📚 Documentation & Onboarding
+
 **Story Points**: 10 | **Priority**: MEDIUM
+
 - Video tutorials creation
 - Interactive documentation
 - Quick start guides
 - Community contribution guidelines
 
 **Acceptance Criteria:**
+
 - [ ] Video tutorials available
 - [ ] Interactive docs functional
 - [ ] Quick start <5 minutes
@@ -216,13 +255,16 @@
 ## 🔬 Research & Innovation
 
 ### 🔮 Experimental Features
+
 **Story Points**: 20 | **Priority**: LOW
+
 - WebAssembly compilation
 - Rust implementation evaluation
 - Distributed systems patterns
 - Edge AI processing
 
 **Acceptance Criteria:**
+
 - [ ] WASM proof of concept
 - [ ] Rust feasibility study
 - [ ] Distributed patterns documented
@@ -231,13 +273,16 @@
 ---
 
 ### 📊 Analytics & Telemetry
+
 **Story Points**: 13 | **Priority**: LOW
+
 - Usage analytics collection
 - Performance metrics dashboard
 - User behavior analysis
 - Feature adoption tracking
 
 **Acceptance Criteria:**
+
 - [ ] Anonymous analytics collected
 - [ ] Performance dashboard active
 - [ ] User insights generated
@@ -253,10 +298,12 @@
 
 **Rationale**: Для production-ready системы нужна полная автоматизация установки и настройки из "коробки", включая все зависимости, переменные окружения и конфигурацию.
 
-### 📦 Sub-epics:
+### 📦 Sub-epics
 
 #### EPIC-401: System Setup & Dependencies
+
 **Story Points**: 25 | **Priority**: HIGH
+
 - Автоматическая проверка и установка Docker
 - Автоматическая установка Docker Compose (v2+)
 - Проверка и установка Node.js, Python, Git
@@ -264,32 +311,39 @@
 - Установка дополнительных инструментов (gh, jq, bc)
 
 **Acceptance Criteria**:
+
 - [ ] Скрипт автоматически определяет ОС и platform
 - [ ] Проверяет наличие всех зависимостей
 - [ ] Предлагает установку недостающих компонентов
 - [ ] Работает на macOS, Linux, Windows (WSL2)
 
 #### EPIC-402: Environment Configuration
+
 **Story Points**: 15 | **Priority**: HIGH
+
 - Автоматическая настройка ~/.zshrc или ~/.bashrc
 - Создание файлов окружения (.env, .env.local)
 - Настройка переменных для AI assistant'ов
 - Интеграция с системными PATH
 
 **Acceptance Criteria**:
+
 - [ ] Умная детекция текущей оболочки (zsh/bash)
 - [ ] Безопасное добавление в конфигурационные файлы
 - [ ] Backup существующих конфигураций
 - [ ] Rollback возможность
 
 #### EPIC-403: Container Management Orchestration
+
 **Story Points**: 15 | **Priority**: MEDIUM
+
 - Создание `claude-docker` - главного оркестратора
 - Автоматическая сборка контейнеров при необходимости
 - Управление версиями контейнеров
 - Cache для ускорения повторных запусков
 
 **Acceptance Criteria**:
+
 - [ ] `claude-docker` может полностью настроить систему
 - [ ] Автоматическая сборка недостающих образов
 - [ ] Умное управление версиями и cache

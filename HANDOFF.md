@@ -10,6 +10,7 @@
 ## 🚨 **CRITICAL ISSUE IDENTIFIED**
 
 **Current State (Production Blocking):**
+
 - ✅ **Claude Code** - **WORKING** (launches successfully)
 - ❌ **Gemini** - **BROKEN** (requests Claude auth instead of Gemini auth)
 - ❌ **GLM (Z.AI)** - **BROKEN** (requests Claude auth instead of Z.AI auth)
@@ -21,15 +22,18 @@
 ## 🔍 **Technical Analysis**
 
 ### **Problem Manifestation:**
+
 When launching `gemini` or `glm`, the system incorrectly requests Claude Console authentication instead of the respective service authentication.
 
 ### **Suspected Causes:**
+
 1. **Environment Variable Contamination:** `ANTHROPIC_API_KEY` and `ANTHROPIC_BASE_URL` set globally affect all modes
 2. **Mount Path Conflicts:** All modes use same `/root/.claude-config` mount point
 3. **Entrypoint Logic:** Container entrypoint may default to Claude mode regardless of `AI_MODE` setting
 4. **Authentication State Pollution:** Claude credentials persist and override other modes
 
 ### **Evidence Found in Code:**
+
 ```bash
 # Line 350: GLM mode forces AI_MODE=claude
 env_vars+=("-e" "AI_MODE=claude")
@@ -47,12 +51,14 @@ env_vars+=(("-e" "ANTHROPIC_API_KEY=$zai_key")
 ## 🧪 **Immediate Diagnostic Commands**
 
 ### **Step 1: Run Isolation Test Script**
+
 ```bash
 chmod +x test-ai-isolation.sh
 ./test-ai-isolation.sh
 ```
 
 ### **Step 2: Manual Mode Testing**
+
 ```bash
 # Test each mode individually with isolation
 echo "Testing Claude mode..."
@@ -66,6 +72,7 @@ AI_MODE=glm ANTHROPIC_API_KEY="" ANTHROPIC_BASE_URL="" glm
 ```
 
 ### **Step 3: Container Environment Check**
+
 ```bash
 # Check running containers
 docker ps
@@ -79,14 +86,17 @@ docker exec -it <container_name> env | grep -E "(ANTHROPIC|GEMINI|ZAI|AI_MODE)"
 ## 🛠️ **Expert Analysis & Root Cause**
 
 ### **Unix Script Expert Analysis:**
+
 - **Critical Issue:** Global environment variables (`ANTHROPIC_API_KEY`) contaminate all modes
 - **Solution:** Implement strict mode isolation with local environment variables
 
 ### **DevOps Engineer Analysis:**
+
 - **Critical Issue:** Shared mount paths (`/root/.claude-config`) cause state pollution
 - **Solution:** Implement mode-specific mount points (`/root/.gemini-config`, `/root/.glm-config`)
 
 ### **Code Analysis Results:**
+
 The current implementation has fundamental flaws:
 
 1. **GLM Mode (Lines 350-356):** Forces `AI_MODE=claude` even for GLM
@@ -99,6 +109,7 @@ The current implementation has fundamental flaws:
 ## 🛠️ **Immediate Fix Strategy**
 
 ### **Option 1: Emergency Environment Isolation**
+
 ```bash
 # Create mode-specific isolation wrapper
 cat > ~/.docker-ai-config/isolate-modes.sh << 'EOF'
@@ -132,6 +143,7 @@ isolate_claude
 ```
 
 ### **Option 2: Code Fix (Recommended)**
+
 Modify `ai-assistant.zsh` to implement proper mode isolation:
 
 ```bash
@@ -161,6 +173,7 @@ fi
 ## 📋 **Rollback Strategy (Emergency Procedure)**
 
 ### **Option 1: Git Revert to Working State**
+
 ```bash
 # Find commits that broke authentication
 git log --oneline --grep="auth\|glm\|gemini\|env" -n 20
@@ -173,6 +186,7 @@ source ~/.zshrc
 ```
 
 ### **Option 2: Manual Environment Reset**
+
 ```bash
 # Clean all AI environment variables
 unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL CLAUDE_API_KEY GEMINI_API_KEY ZAI_API_KEY
@@ -182,6 +196,7 @@ source ~/.zshrc
 ```
 
 ### **Option 3: Container Isolation**
+
 ```bash
 # Force mode-specific containers
 docker run --rm -e AI_MODE=gemini -e GEMINI_MODE=1 \
@@ -194,18 +209,21 @@ docker run --rm -e AI_MODE=gemini -e GEMINI_MODE=1 \
 ## 🎯 **Immediate Action Plan**
 
 ### **Phase 1: Emergency Stabilization (Next 30 minutes)**
+
 1. **Run isolation test:** `./test-ai-isolation.sh`
 2. **Document exact error messages** from each mode
 3. **Implement environment isolation wrapper** (Option 1 above)
 4. **Test emergency fixes** on each mode
 
 ### **Phase 2: Code Fix Implementation (Next 2 hours)**
+
 1. **Implement proper mode isolation** in `ai-assistant.zsh`
 2. **Add mode-specific mount points**
 3. **Test all three modes independently**
 4. **Verify no cross-contamination**
 
 ### **Phase 3: Validation & Documentation (Next 24 hours)**
+
 1. **Create comprehensive tests** for mode isolation
 2. **Document the fix** and prevention measures
 3. **Update CI/CD** to catch similar issues

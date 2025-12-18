@@ -157,6 +157,7 @@ refactor(sync): simplify state synchronization logic
 ### 🔍 Commit Quality Checklist
 
 Before committing, verify:
+
 - [ ] Commit message follows conventional format
 - [ ] Type is appropriate for changes
 - [ ] Description is clear and concise
@@ -170,6 +171,7 @@ Before committing, verify:
 ### 🎯 When to Create Handoff
 
 **Create handoff when**:
+
 - Completing significant feature implementation
 - Ending work session with incomplete changes
 - Transitioning between AI modes (Gemini ↔ Claude)
@@ -278,6 +280,7 @@ gh pr edit --add-reviewer "username1,username2"
 ### ✅ PR Checklist
 
 **Before creating PR**:
+
 - [ ] Code follows project conventions
 - [ ] All tests pass
 - [ ] Documentation updated
@@ -285,6 +288,7 @@ gh pr edit --add-reviewer "username1,username2"
 - [ ] No sensitive data committed
 
 **PR Requirements**:
+
 - [ ] Clear description of changes
 - [ ] Testing instructions included
 - [ ] Screenshots if UI changes
@@ -496,6 +500,7 @@ git config --global mergetool.vscode.cmd 'code --wait $MERGED'
 ## 📚 Best Practices Summary
 
 ### ✅ Daily Habits
+
 1. **Pull before work** - Always sync with remote
 2. **Commit often** - Small, focused commits
 3. **Push frequently** - Share progress regularly
@@ -503,6 +508,7 @@ git config --global mergetool.vscode.cmd 'code --wait $MERGED'
 5. **Clean workspace** - Commit or stash before switching
 
 ### 🚨 Things to Avoid
+
 1. **Don't commit sensitive data**
 2. **Don't force push to shared branches**
 3. **Don't commit broken code to master**
@@ -510,6 +516,7 @@ git config --global mergetool.vscode.cmd 'code --wait $MERGED'
 5. **Don't work on master directly**
 
 ### 🎯 Pro Tips
+
 1. **Use pre-commit hooks** for validation
 2. **Enable GPG signing** for security
 3. **Configure automatic backup** of work

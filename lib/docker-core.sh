@@ -41,17 +41,17 @@ generate_container_id() {
 build_isolated_container() {
     local mode="$1"
     local container_dir="containers/${mode}"
-    
+
     log_docker "Building ${mode} isolated container..."
-    
+
     if [[ ! -d "$container_dir" ]]; then
         log_docker_error "Container directory not found: $container_dir"
         return 1
     fi
-    
+
     # Build container with version tag
     local image_name="${CONTAINER_PREFIX}-${mode}:${AI_VERSION}"
-    
+
     if docker build -t "$image_name" "$container_dir"; then
         log_docker "Successfully built ${mode} container: $image_name"
         return 0
@@ -66,25 +66,25 @@ run_isolated_container() {
     local mode="$1"
     shift
     local args=("$@")
-    
+
     local container_id=$(generate_container_id "$mode")
     local image_name="${CONTAINER_PREFIX}-${mode}:${AI_VERSION}"
     local config_file="config/active/${mode}.yml"
-    
+
     log_docker "Starting ${mode} container: $container_id"
-    
+
     # Check if image exists
     if ! docker image inspect "$image_name" &>/dev/null; then
         log_docker_error "Image not found: $image_name"
         log_docker "Building ${mode} container..."
         build_isolated_container "$mode" || return 1
     fi
-    
+
     # Load configuration
     local memory_limit="512m"
     local cpu_limit="0.5"
     local pids_limit="100"
-    
+
     if [[ -f "$config_file" ]]; then
         log_docker "Loading configuration from: $config_file"
         # Parse YAML (basic implementation)
@@ -92,7 +92,7 @@ run_isolated_container() {
         cpu_limit=$(grep -A1 "cpu_limit:" "$config_file" | tail -1 | sed 's/.*: *//' | tr -d '"')
         pids_limit=$(grep -A1 "pids_limit:" "$config_file" | tail -1 | sed 's/.*: *//' | tr -d '"')
     fi
-    
+
     # Prepare isolation flags
     local isolation_flags=(
         --rm
@@ -108,14 +108,14 @@ run_isolated_container() {
         --userns=private
         --cgroupns=private
     )
-    
+
     # Prepare volume mounts
     local volume_mounts=(
         -v "$(pwd)/workspace/${mode}:/workspace/${mode}:rw"
         -v "$(pwd)/config/active/${mode}:/home/${mode}/.config:rw"
         -v "$(pwd)/backups/${mode}:/home/${mode}/.backups:rw"
     )
-    
+
     # Prepare environment variables
     local env_vars=(
         -e AI_MODE="$mode"
@@ -123,19 +123,19 @@ run_isolated_container() {
         -e CONTAINER_ID="$container_id"
         -e WORKSPACE_DIR="/workspace/${mode}"
     )
-    
+
     # Add SSH agent if available
     if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
         volume_mounts+=(-v "$SSH_AUTH_SOCK:/ssh-agent")
         env_vars+=(-e SSH_AUTH_SOCK="/ssh-agent")
     fi
-    
+
     log_docker "Container configuration:"
     log_docker "  Image: $image_name"
     log_docker "  Memory: $memory_limit"
     log_docker "  CPU: $cpu_limit"
     log_docker "  PIDs limit: $pids_limit"
-    
+
     # Run container
     docker run "${isolation_flags[@]}" "${volume_mounts[@]}" "${env_vars[@]}" "$image_name" "${args[@]}"
 }
@@ -144,16 +144,16 @@ run_isolated_container() {
 stop_container() {
     local mode="$1"
     local pattern="${CONTAINER_PREFIX}-${mode}-*"
-    
+
     log_docker "Stopping ${mode} containers..."
-    
+
     local containers=$(docker ps --format "{{.Names}}" | grep "^${pattern}$" || true)
-    
+
     if [[ -z "$containers" ]]; then
         log_docker_warn "No running ${mode} containers found"
         return 0
     fi
-    
+
     echo "$containers" | while read -r container; do
         log_docker "Stopping container: $container"
         docker stop "$container" || log_docker_warn "Failed to stop: $container"
@@ -163,9 +163,9 @@ stop_container() {
 # Clean containers
 clean_containers() {
     local mode="${1:-all}"
-    
+
     log_docker "Cleaning ${mode} containers..."
-    
+
     if [[ "$mode" == "all" ]]; then
         # Remove all AI Assistant containers
         docker ps -a --format "{{.Names}}" | grep "^${CONTAINER_PREFIX}-" | while read -r container; do
@@ -184,9 +184,9 @@ clean_containers() {
 # List containers
 list_containers() {
     local mode="${1:-all}"
-    
+
     log_docker "Listing ${mode} containers..."
-    
+
     if [[ "$mode" == "all" ]]; then
         docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" | grep "${CONTAINER_PREFIX}" || log_docker_warn "No containers found"
     else
@@ -198,14 +198,14 @@ list_containers() {
 show_logs() {
     local mode="$1"
     local pattern="${CONTAINER_PREFIX}-${mode}-*"
-    
+
     local containers=$(docker ps --format "{{.Names}}" | grep "^${pattern}$" || true)
-    
+
     if [[ -z "$containers" ]]; then
         log_docker_warn "No running ${mode} containers found"
         return 1
     fi
-    
+
     echo "$containers" | head -1 | while read -r container; do
         log_docker "Showing logs for: $container"
         docker logs -f "$container"
@@ -216,14 +216,14 @@ show_logs() {
 health_check() {
     local mode="$1"
     local pattern="${CONTAINER_PREFIX}-${mode}-*"
-    
+
     local containers=$(docker ps --format "{{.Names}}" | grep "^${pattern}$" || true)
-    
+
     if [[ -z "$containers" ]]; then
         echo "unhealthy"
         return 1
     fi
-    
+
     local healthy_count=0
     echo "$containers" | while read -r container; do
         local health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "unknown")
@@ -231,7 +231,7 @@ health_check() {
             ((healthy_count++))
         fi
     done
-    
+
     if [[ $healthy_count -gt 0 ]]; then
         echo "healthy"
         return 0

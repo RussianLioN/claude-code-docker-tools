@@ -202,6 +202,7 @@ export AI_ENABLE_TELEMETRY=false
 ```
 
 **Example Prompt (`code-review.txt`)**:
+
 ```
 You are conducting a code review for this project. Focus on:
 

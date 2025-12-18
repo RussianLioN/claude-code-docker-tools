@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   release:
     types: [ published ]
+  # Добавляем запуск по расписанию для ночных проверок
+  schedule:
+    - cron: '0 2 * * *'  # Каждый день в 2 AM UTC
 
 env:
   REGISTRY: ghcr.io
@@ -19,14 +22,21 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+    # Добавляем условие для пропуска если нет изменений в Docker файлах
+    if: |
+      github.event_name == 'release' ||
+      github.event_name == 'schedule' ||
+      contains(github.event.head_commit.modified, 'Dockerfile') ||
+      contains(github.event.head_commit.modified, 'package') ||
+      contains(github.event.head_commit.modified, 'entrypoint.sh')
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
     - name: Log in to Container Registry
       if: github.event_name != 'pull_request'
       uses: docker/login-action@v3
@@ -34,7 +44,7 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -47,7 +57,7 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha,prefix={{branch}}-
-    
+
     - name: Build and test Docker image
       uses: docker/build-push-action@v5
       with:
@@ -60,25 +70,25 @@ jobs:
         build-args: |
           GEMINI_VERSION=latest
           CLAUDE_VERSION=latest
-    
+
     - name: Test container functionality
       run: |
         echo "Testing basic container functionality..."
-        
+
         # Тест базового запуска
         docker run --rm test-image --version || echo "Version check failed (expected for test)"
-        
+
         # Тест доступности утилит
         docker run --rm --entrypoint="" test-image which node
         docker run --rm --entrypoint="" test-image which npm
         docker run --rm --entrypoint="" test-image which git
         docker run --rm --entrypoint="" test-image which ssh
-        
+
         # Тест Node.js версии
         docker run --rm --entrypoint="" test-image node --version
-        
+
         echo "✅ Container functionality tests passed"
-    
+
     - name: Build and push Docker image
       if: github.event_name != 'pull_request'
       uses: docker/build-push-action@v5
@@ -97,32 +107,32 @@ jobs:
   test-scripts:
     runs-on: macos-latest
     if: github.event_name == 'push' || github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Test install.sh script
       run: |
         echo "Testing install.sh script..."
-        
+
         # Проверка синтаксиса
         bash -n install.sh
-        
+
         # Тест help функциональности (без реальной установки)
         if grep -q "help" install.sh; then
           echo "✅ install.sh contains help functionality"
         fi
-        
+
         echo "✅ install.sh script validation passed"
-    
+
     - name: Test ai-assistant.zsh script
       run: |
         echo "Testing ai-assistant.zsh script..."
-        
+
         # Проверка синтаксиса
         zsh -n ai-assistant.zsh
-        
+
         # Проверка наличия ключевых функций
         if grep -q "function gemini" ai-assistant.zsh && \
            grep -q "function claude" ai-assistant.zsh && \
@@ -133,24 +143,24 @@ jobs:
           echo "❌ Missing required functions"
           exit 1
         fi
-        
+
         echo "✅ ai-assistant.zsh script validation passed"
 
   # Тестирование безопасности
   security-scan:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: test-image:latest
         format: 'sarif'
         output: 'trivy-results.sarif'
-    
+
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v2
       if: always()
@@ -161,15 +171,15 @@ jobs:
   # Тестирование документации
   docs-test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Test README.md
       run: |
         echo "Testing README.md..."
-        
+
         # Проверка наличия ключевых секций
         if grep -q "## Quick Start" README.md && \
            grep -q "## Установка" README.md && \
@@ -179,12 +189,12 @@ jobs:
           echo "❌ README.md missing required sections"
           exit 1
         fi
-        
+
         # Проверка валидности Markdown
         if command -v markdownlint &> /dev/null; then
           markdownlint README.md || echo "⚠️ Markdown linting issues found"
         fi
-        
+
         echo "✅ Documentation validation passed"
 
   # Публикация релиза
@@ -192,11 +202,11 @@ jobs:
     needs: [build-test, test-scripts, security-scan, docs-test]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Generate release notes
       uses: softprops/action-gh-release@v1
       with:
@@ -208,7 +218,7 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Update Docker Hub description
       if: github.event_name == 'release'
       run: |

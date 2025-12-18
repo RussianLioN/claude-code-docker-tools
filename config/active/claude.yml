@@ -21,13 +21,13 @@ claude:
   stream: true
   top_p: 0.9
   frequency_penalty: 0.0
-  
+
 # Workspace Configuration
 workspace:
   base_dir: "./workspace/claude"
   config_dir: "./config/active/claude"
   mount_point: "/home/claude/.claude-config"
-  
+
 # Plugins and Extensions
 plugins:
   enabled:
@@ -35,7 +35,7 @@ plugins:
     - git-integration
     - project-tools
     - code-analysis
-  
+
   mcp_servers:
     - name: "filesystem"
       command: "npx -y @modelcontextprotocol/server-filesystem"
@@ -54,7 +54,7 @@ development:
   verbose: false
   auto_save: true
   backup_sessions: true
-  
+
 # Security Settings
 security:
   isolate_network: false
@@ -67,7 +67,7 @@ monitoring:
   health_check: true
   metrics: true
   logs: true
-  
+
 # Backup Configuration
 backup:
   enabled: true

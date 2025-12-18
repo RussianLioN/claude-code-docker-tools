@@ -163,9 +163,9 @@ You can use Claude Code for development Now!
 <Check>
   Mapping between Claude Code internal model environment variables and GLM models, with the default configuration as follows:
 
-  * `ANTHROPIC_DEFAULT_OPUS_MODEL`: `GLM-4.6`
-  * `ANTHROPIC_DEFAULT_SONNET_MODEL`: `GLM-4.6`
-  * `ANTHROPIC_DEFAULT_HAIKU_MODEL`: `GLM-4.5-Air`
+* `ANTHROPIC_DEFAULT_OPUS_MODEL`: `GLM-4.6`
+* `ANTHROPIC_DEFAULT_SONNET_MODEL`: `GLM-4.6`
+* `ANTHROPIC_DEFAULT_HAIKU_MODEL`: `GLM-4.5-Air`
 </Check>
 
 If adjustments are needed, you can directly modify the configuration file (for example, \~/.claude/settings.json in Claude Code) to switch to other models.
@@ -222,7 +222,6 @@ claude --version
 claude update
 ```
 
-
 ---
 
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://docs.z.ai/llms.txt
+> To find navigation and other pages in this documentation, fetch the llms.txt file at: <https://docs.z.ai/llms.txt>

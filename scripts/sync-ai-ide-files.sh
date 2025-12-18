@@ -184,13 +184,13 @@ for target in "${DIFFERING_FILES[@]}"; do
             # Source is standard - use full content
             CONTENT=$(cat "$SOURCE_FILE")
         fi
-        
+
         # Create QODER.md with YAML header + content
         {
             echo "$QODER_YAML_HEADER"
             echo "$CONTENT"
         } > "$target"
-        
+
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ OK (with Qoder YAML frontmatter)${NC}"
             ((SYNC_COUNT++))
@@ -215,13 +215,13 @@ for target in "${DIFFERING_FILES[@]}"; do
             # Source is standard - use full content
             CONTENT=$(cat "$SOURCE_FILE")
         fi
-        
+
         # Create Trae file with YAML header + content
         {
             echo "$TRAE_YAML_HEADER"
             echo "$CONTENT"
         } > "$target"
-        
+
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ OK (with Trae YAML frontmatter)${NC}"
             ((SYNC_COUNT++))
@@ -242,7 +242,7 @@ for target in "${DIFFERING_FILES[@]}"; do
             # Normal copy
             cp "$SOURCE_FILE" "$target"
         fi
-        
+
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ OK${NC}"
             ((SYNC_COUNT++))

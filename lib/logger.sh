@@ -40,15 +40,15 @@ log_error() {
 # Log rotation
 rotate_logs() {
     local max_files="${1:-5}"
-    
+
     if [[ -f "$LOG_FILE" ]]; then
         for ((i=max_files; i>0; i--)); do
             local old_file="${LOG_FILE}.${i}"
             local new_file="${LOG_FILE}.$((i-1))"
-            
+
             [[ -f "$new_file" ]] && mv "$new_file" "$old_file"
         done
-        
+
         mv "$LOG_FILE" "${LOG_FILE}.0"
     fi
 }

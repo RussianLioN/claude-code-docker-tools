@@ -23,6 +23,7 @@ graph TD
 ```
 
 ### 1. **Unit Tests (35%)** - Быстрые, изолированные
+
 ```bash
 # Текущие:
 - ✅ ai-assistant-tests.sh (10 тестов)
@@ -36,6 +37,7 @@ graph TD
 ```
 
 ### 2. **Integration Tests (15%)** - Компоненты вместе
+
 ```bash
 # Необходимые:
 - ⏳ Docker ↔ ai-assistant integration
@@ -46,6 +48,7 @@ graph TD
 ```
 
 ### 3. **E2E Tests (5%)** - Пользовательские сценарии
+
 ```bash
 # Текущие:
 - ✅ USER_TESTING_GUIDE.md (7 сценариев)
@@ -58,6 +61,7 @@ graph TD
 ```
 
 ### 4. **Security Tests (25%)** - Критически важно
+
 ```bash
 # Необходимые:
 - ⏳ Container security scanning
@@ -69,6 +73,7 @@ graph TD
 ```
 
 ### 5. **Performance Tests (20%)** - SRE метрики
+
 ```bash
 # Текущие:
 - ✅ performance-test.sh (basic)
@@ -86,6 +91,7 @@ graph TD
 ## 🚀 CI/CD Pipeline Testing Strategy
 
 ### **GitHub Actions Workflow**
+
 ```yaml
 name: AI Assistant CI/CD Pipeline
 
@@ -168,6 +174,7 @@ jobs:
 ### **Security Test Categories**
 
 #### 1. **Container Security**
+
 ```bash
 # CVE Scanning
 trivy image ghcr.io/anthropics/claude-code-tools:latest
@@ -184,6 +191,7 @@ docker run --rm --user root \
 ```
 
 #### 2. **SSH Security**
+
 ```bash
 # SSH agent validation
 ssh-add -l  # Verify no keys in container
@@ -194,6 +202,7 @@ docker exec $(docker ps -q) ssh-add -l  # Should be empty
 ```
 
 #### 3. **Configuration Security**
+
 ```bash
 # File permissions
 ls -la .ai-state/  # Verify secure permissions
@@ -204,6 +213,7 @@ grep -r "password\|secret\|token" .ai-state/  # Should be empty
 ```
 
 #### 4. **Network Security**
+
 ```bash
 # Network access validation
 docker run --rm --network none claude-code-tools \
@@ -218,6 +228,7 @@ docker run --rm claude-code-tools nslookup google.com
 ## 📈 SRE Metrics & Monitoring
 
 ### **Service Level Objectives (SLOs)**
+
 ```yaml
 slos:
   availability:
@@ -241,6 +252,7 @@ slos:
 ```
 
 ### **Alerting Rules**
+
 ```yaml
 alerts:
   - name: HighErrorRate
@@ -265,6 +277,7 @@ alerts:
 ## 🏗️ Infrastructure as Code Testing
 
 ### **Terraform Validation**
+
 ```hcl
 # terraform/validate.tf
 resource "null_resource" "ai_assistant_validation" {
@@ -287,6 +300,7 @@ resource "null_resource" "ai_assistant_validation" {
 ```
 
 ### **Kubernetes Health Checks**
+
 ```yaml
 # k8s/health-check.yaml
 apiVersion: v1
@@ -314,6 +328,7 @@ spec:
 ## 🧪 Chaos Engineering
 
 ### **Chaos Test Scenarios**
+
 ```bash
 # 1. Docker daemon failure
 sudo systemctl stop docker
@@ -339,30 +354,35 @@ gexec 'echo "Should handle memory pressure"'
 ## 📋 Implementation Roadmap
 
 ### **Phase 1: Foundation (Week 1-2)**
+
 - [ ] Complete unit test coverage (>80%)
 - [ ] Implement mock infrastructure
 - [ ] Add basic security scanning
 - [ ] Create CI/CD pipeline skeleton
 
 ### **Phase 2: Integration (Week 3-4)**
+
 - [ ] Docker integration tests
 - [ ] SSH agent validation
 - [ ] Configuration sync testing
 - [ ] Multi-platform testing (macOS/Linux)
 
 ### **Phase 3: Security (Week 5-6)**
+
 - [ ] Container security scanning
 - [ ] Network security validation
 - [ ] Secret management testing
 - [ ] Compliance checks (SOC2/GDPR)
 
 ### **Phase 4: Performance (Week 7-8)**
+
 - [ ] Load testing implementation
 - [ ] Memory leak detection
 - [ ] Resource optimization
 - [ ] SLO monitoring setup
 
 ### **Phase 5: Production Readiness (Week 9-10)**
+
 - [ ] Chaos engineering scenarios
 - [ ] Disaster recovery testing
 - [ ] Documentation completion
@@ -373,6 +393,7 @@ gexec 'echo "Should handle memory pressure"'
 ## 🎯 Success Metrics
 
 ### **Technical Metrics**
+
 - ✅ Test coverage: >80%
 - ✅ Security scan: 0 high/critical CVEs
 - ✅ Performance: <2s startup, <1GB memory
@@ -380,6 +401,7 @@ gexec 'echo "Should handle memory pressure"'
 - ✅ Cleanup: 0 orphaned containers
 
 ### **Process Metrics**
+
 - ✅ CI/CD: <30min total pipeline time
 - ✅ MTTR: <1hour for critical issues
 - ✅ Deployment: Daily with <5% failure rate

@@ -43,6 +43,7 @@ gemini  # or: claude
 ### Prerequisites
 
 **System Requirements**:
+
 - macOS (Apple Silicon or Intel)
 - Docker Desktop 4.0+
 - Zsh shell
@@ -56,6 +57,7 @@ gemini  # or: claude
 ```
 
 **What it does**:
+
 - ✅ Builds Docker image with latest versions
 - ✅ Creates configuration directories
 - ✅ Sets up shell integration
@@ -123,7 +125,8 @@ which gemini claude aic cic  # Should show paths
 
 ### Ephemeral Architecture Note
 
-**Note**: Since v3.0, the system uses **ephemeral containers**. 
+**Note**: Since v3.0, the system uses **ephemeral containers**.
+
 - Containers are created on-demand and removed immediately after use (`--rm`).
 - There are no persistent background processes to manage.
 - `ai-list`, `ai-stop` commands are no longer needed.
@@ -219,6 +222,7 @@ docker system prune -f
 ### Environment Variables
 
 **Claude Configuration**:
+
 ```bash
 export CLAUDE_API_KEY="sk-ant-api03-..."
 export CLAUDE_MODEL="claude-3-5-sonnet-20241022"
@@ -226,6 +230,7 @@ export CLAUDE_MAX_TOKENS=4096
 ```
 
 **Gemini Configuration**:
+
 ```bash
 export GEMINI_MODEL="gemini-2.5-pro"
 export GOOGLE_CLOUD_PROJECT="your-project-id"
@@ -234,6 +239,7 @@ export GOOGLE_CLOUD_PROJECT="your-project-id"
 ### Per-Project Configuration
 
 **Create project-specific settings**:
+
 ```bash
 # In your project directory
 mkdir .ai-state
@@ -250,6 +256,7 @@ EOF
 ### Custom Aliases
 
 **Add to ~/.zshrc**:
+
 ```bash
 # Quick AI switching
 alias gem="gemini"
@@ -270,22 +277,26 @@ alias dev-review="claude && cic"
 ### Session Management
 
 **Always**:
+
 - Use project-specific directories
 - Let AI handle commits when possible
 - Review AI-generated code
 
 **Never**:
+
 - Commit sensitive data
 - Force kill containers (unless stuck)
 
 ### Performance Optimization
 
 **Container Optimization**:
+
 - Use .dockerignore to reduce context
 - Leverage Docker layer caching
 - Clean up unused images/volumes
 
 **AI Optimization**:
+
 - Provide clear context
 - Use appropriate AI mode for task
 - Keep sessions focused
@@ -294,12 +305,14 @@ alias dev-review="claude && cic"
 ### Security Practices
 
 **Always**:
+
 - Keep API keys secure
 - Use SSH key forwarding
 - Review AI-generated code
 - Update dependencies regularly
 
 **Configuration Security**:
+
 ```bash
 # Secure Claude API key
 chmod 600 ~/.docker-ai-config/env
@@ -311,6 +324,7 @@ echo ".ai-state/" >> .gitignore
 ### Troubleshooting Common Issues
 
 **Docker Issues**:
+
 ```bash
 # Docker not running
 open -a Docker
@@ -325,6 +339,7 @@ docker system prune -f
 ```
 
 **SSH Issues**:
+
 ```bash
 # Add SSH key to agent
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519
@@ -334,6 +349,7 @@ ssh-add -l
 ```
 
 **API Issues**:
+
 ```bash
 # Check Claude API key
 cat ~/.docker-ai-config/env | grep CLAUDE_API_KEY
@@ -350,6 +366,7 @@ curl -H "x-api-key: $CLAUDE_API_KEY" \
 ### Custom AI Prompts
 
 **Create reusable prompts**:
+
 ```bash
 # ~/.docker-ai-config/prompts/
 cat > code-review.txt << 'EOF'
@@ -368,6 +385,7 @@ EOF
 ### Automation Scripts
 
 **Automated setup for new projects**:
+
 ```bash
 #!/bin/bash
 # setup-ai-project.sh
@@ -392,6 +410,7 @@ echo "✅ Project $PROJECT_NAME ready for AI development"
 ### Integration with IDEs
 
 **VS Code integration**:
+
 ```json
 // .vscode/tasks.json
 {

@@ -57,11 +57,13 @@ This document outlines the comprehensive security model for the Dual AI Assistan
 ### SSH Key Management
 
 **Requirements**:
+
 - Ed25519 keys minimum (2048-bit RSA fallback)
 - Passphrase-protected keys
 - Regular key rotation (90 days)
 
 **Setup**:
+
 ```bash
 # Generate new key
 ssh-keygen -t ed25519 -C "your.email@example.com"
@@ -74,6 +76,7 @@ ssh-add -l
 ```
 
 **SSH Configuration**:
+
 ```bash
 # ~/.ssh/config
 Host github.com
@@ -87,6 +90,7 @@ Host github.com
 ### API Key Security
 
 **Claude API Key**:
+
 ```bash
 # Secure storage (never in repository)
 export CLAUDE_API_KEY="sk-ant-api03-..."
@@ -95,6 +99,7 @@ chmod 600 ~/.docker-ai-config/env
 ```
 
 **Best Practices**:
+
 - Use environment variables only
 - Never hardcode in scripts
 - Rotate keys regularly
@@ -105,6 +110,7 @@ chmod 600 ~/.docker-ai-config/env
 ### Container Hardening
 
 **Dockerfile Security**:
+
 ```dockerfile
 # Use specific version tags
 FROM node:22-alpine@sha256:specific-hash
@@ -122,6 +128,7 @@ COPY --chown=aiuser:nodejs . .
 ```
 
 **Runtime Security**:
+
 ```bash
 docker run --rm \
   --read-only \
@@ -139,6 +146,7 @@ docker run --rm \
 ### Security Scanning
 
 **Image Vulnerability Scanning**:
+
 ```bash
 # Trivy scan
 trivy image claude-code-tools:latest
@@ -151,6 +159,7 @@ grype claude-code-tools:latest
 ```
 
 **CI/CD Integration**:
+
 ```yaml
 # .github/workflows/security.yml
 name: Security Scan
@@ -174,6 +183,7 @@ jobs:
 ### SSH Forwarding Security
 
 **Current Implementation**:
+
 ```bash
 # Secure agent forwarding
 docker run -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
@@ -182,6 +192,7 @@ docker run -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
 ```
 
 **Security Considerations**:
+
 - Unix socket permissions (600)
 - Limited to specific containers
 - Agent lifetime management
@@ -190,6 +201,7 @@ docker run -e SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock \
 ### Network Isolation
 
 **Docker Network Configuration**:
+
 ```bash
 # Create dedicated network
 docker network create --driver bridge ai-network
@@ -201,6 +213,7 @@ docker run --network ai-network \
 ```
 
 **Port Security**:
+
 ```bash
 # Use dynamic port allocation
 allocate_port() {
@@ -220,6 +233,7 @@ allocate_port() {
 ### Secrets Management
 
 **Environment Variables**:
+
 ```bash
 # Use .env file for local development
 cat > .env << EOF
@@ -234,6 +248,7 @@ set +a
 ```
 
 **Production Secrets**:
+
 ```bash
 # HashiCorp Vault integration
 vault kv get secret/claude/api-key
@@ -249,11 +264,13 @@ kubectl create secret generic claude-api \
 ### Data Encryption
 
 **In-Transit**:
+
 - SSH agent forwarding encrypted
 - API calls over HTTPS/TLS
 - Container communication encrypted
 
 **At-Rest**:
+
 ```bash
 # Encrypted configuration
 gpg --symmetric --cipher-algo AES256 ~/.docker-ai-config/env
@@ -265,12 +282,14 @@ gpg --decrypt ~/.docker-ai-config/env.gpg > ~/.docker-ai-config/env
 ### Data Sanitization
 
 **SSH Config Sanitization**:
+
 ```bash
 # Remove macOS-specific options
 grep -vE "UseKeychain|AddKeysToAgent|IdentityFile" ~/.ssh/config > clean_config
 ```
 
 **Sensitive Data Exclusion**:
+
 ```bash
 # .gitignore for security
 .env
@@ -287,6 +306,7 @@ grep -vE "UseKeychain|AddKeysToAgent|IdentityFile" ~/.ssh/config > clean_config
 ### Security Monitoring
 
 **Container Monitoring**:
+
 ```bash
 # Falco for runtime security
 falco -c /etc/falco/falco_rules.yaml
@@ -296,6 +316,7 @@ docker events --filter type=container
 ```
 
 **Log Monitoring**:
+
 ```bash
 # Security logs
 tail -f /var/log/auth.log | grep sshd
@@ -308,6 +329,7 @@ docker logs --tail 100 -f ai-container
 ### Intrusion Detection
 
 **Fail2Ban Configuration**:
+
 ```ini
 # /etc/fail2ban/jail.local
 [sshd]
@@ -320,6 +342,7 @@ bantime = 3600
 ```
 
 **Anomaly Detection**:
+
 ```python
 # Example: Detect unusual SSH activity
 import subprocess
@@ -349,12 +372,14 @@ def detect_ssh_anomalies():
 ### Security Incident Procedures
 
 **Immediate Response**:
+
 1. **Isolation**: Stop affected containers
 2. **Preservation**: Capture logs and evidence
 3. **Assessment**: Determine scope and impact
 4. **Communication**: Notify stakeholders
 
 **Isolation Commands**:
+
 ```bash
 # Stop all AI containers
 docker stop $(docker ps -q --filter "label=ai.instance")
@@ -367,6 +392,7 @@ ssh-add -D
 ```
 
 **Evidence Collection**:
+
 ```bash
 # Create evidence directory
 mkdir -p incident-$(date +%Y%m%d-%H%M%S)
@@ -385,6 +411,7 @@ journalctl -u docker > docker-service.log
 ### Recovery Procedures
 
 **Service Restoration**:
+
 ```bash
 # Verify system integrity
 docker system prune -f

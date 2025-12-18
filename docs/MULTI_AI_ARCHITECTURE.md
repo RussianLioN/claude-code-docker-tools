@@ -34,6 +34,7 @@ Gemini API    Claude API   Future APIs
 ### 🔧 Техническая реализация
 
 #### 1. **Image Selector Pattern**
+
 ```bash
 # Умный выбор образа
 select_ai_image() {
@@ -46,6 +47,7 @@ select_ai_image() {
 ```
 
 #### 2. **Provider-specific Configuration**
+
 ```bash
 # Специфичные переменные окружения
 setup_provider_env() {
@@ -62,6 +64,7 @@ setup_provider_env() {
 ```
 
 #### 3. **Unified Execution Pattern**
+
 ```bash
 run_ai_container() {
     local provider="$1"
@@ -77,6 +80,7 @@ run_ai_container() {
 ### 🚀 Build Strategy
 
 #### Multi-Stage Dockerfile
+
 ```dockerfile
 # Base stage
 FROM node:22-alpine AS base
@@ -102,6 +106,7 @@ COPY --from=claude /usr/local/lib/node_modules /usr/local/lib/node_modules/claud
 ### 📋 Deployment Pattern
 
 #### Development
+
 ```bash
 # Использовать специализированные образы
 gemini    # -> gemini-cli:latest
@@ -109,6 +114,7 @@ claude    # -> claude-code-tools:latest
 ```
 
 #### Production
+
 ```bash
 # Возможно использовать универсальный образ с entrypoint
 ai-exec gemini "command"
