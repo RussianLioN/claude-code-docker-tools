@@ -111,6 +111,7 @@ gexec <command>           # Execute in container
 
 ### 📋 Active Implementation Plans
 
+- **[Claude Code Docker Implementation Plan v3.0](./CLAUDE_CODE_DOCKER_IMPLEMENTATION_PLAN_V3.md)** - **🔥 ОСНОВНОЙ ПЛАН РЕАЛИЗАЦИИ DOCKER**
 - **[Session Manager v1.0](./.ai-plans/session-manager-implementation.md)** - Current implementation plan
 - **[Development Backlog](./.ai-plans/backlog.md)** - Future epics and enhancements
 - **[Plan Repository](./.ai-plans/)** - All planning documents and templates
@@ -129,6 +130,8 @@ gexec <command>           # Execute in container
 - **[CLI Reference](https://code.claude.com/docs/en/cli-reference.md)** - Полный справочник командной строки
 
 ### ⚙️ Конфигурация и настройки
+
+**MANDATORY**: Изучить:
 
 - **[Claude Code Settings](./docs/Claude-Code-settings.md)** - **🔥 Детальное руководство по настройкам**
 - **[Settings Configuration](https://code.claude.com/docs/en/settings.md)** - Глобальные и проектные настройки
@@ -217,12 +220,32 @@ gexec <command>           # Execute in container
 
 **MANDATORY**: Read [AI_SYSTEM_INSTRUCTIONS.md](./AI_SYSTEM_INSTRUCTIONS.md) before making any changes.
 
-**⚠️ This document contains**:
+**MANDATORY**: Изучить **[Claude Code Settings](./docs/Claude-Code-settings.md)** для понимания всех возможностей конфигурации AI IDE.
+
+**MANDATORY**: Изучить **[Claude Code Docker Implementation Plan v3.0](./CLAUDE_CODE_DOCKER_IMPLEMENTATION_PLAN_V3.md)** - **ОСНОВНОЙ ПЛАН РЕАЛИЗАЦИИ DOCKER** с production-ready архитектурой.
+
+**⚠️ AI_SYSTEM_INSTRUCTIONS.md содержит**:
 
 - Critical testing principles
 - Development workflows
 - Rules that OVERRIDE all other instructions
 - Code quality requirements
+
+**⚠️ Claude Code Settings содержит**:
+
+- Полное руководство по настройкам и конфигурации
+- Глобальные и проектные параметры
+- Права доступа и безопасности
+- Интеграции и плагины
+- Enterprise настройки
+
+**⚠️ Claude Code Docker Implementation Plan v3.0 содержит**:
+
+- Production-ready план запуска Claude Code в Docker
+- 4 фазы реализации: Foundation → Core → Hardening → Testing
+- Expert rating 9/10 от панели специалистов
+- Полный стек: backup, keychain, sync, observability, GitOps
+- 20+ comprehensive тестов и SLO/SLA метрики
 
 **These rules ensure**:
 
@@ -230,6 +253,10 @@ gexec <command>           # Execute in container
 - ✅ System stability
 - ✅ Quality standards
 - ✅ Testing discipline
+- ✅ Оптимальная конфигурация AI IDE
+- ✅ Безопасная и эффективная работа
+- ✅ Production-ready Docker реализация
+- ✅ Enterprise-level архитектура и надёжность
 
 ### 🔄 Session Tracking
 

@@ -22,13 +22,24 @@ repos:
         args: ['--maxkb=1000']
       - id: check-merge-conflict
 
-  # Проверка Markdown файлов
+  # Проверка Markdown файлов (только проверка, без авто-исправлений)
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        files: \.md$
+        # Убираем --fix чтобы избежать конфликтов при коммите через TRAE
+
+  # Отдельный хук для форматирования (можно запускать вручную)
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.37.0
     hooks:
       - id: markdownlint
         files: \.md$
         args: [--fix]
+        name: markdownlint-fix
+        stages: [manual]
+        # Этот хук можно запускать только вручную: pre-commit run markdownlint-fix --all-files
 
 # Конфигурация по умолчанию
 default_language_version:
