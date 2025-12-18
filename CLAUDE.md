@@ -117,6 +117,100 @@ gexec <command>           # Execute in container
 
 ---
 
+## 📖 Официальная документация Claude Code
+
+**🔗 Полная справочная информация по Claude Code IDE**
+
+### 🚀 Быстрый старт и основы
+
+- **[Обзор Claude Code](https://code.claude.com/docs/en/overview.md)** - Введение в agentic coding tool
+- **[Quickstart](https://code.claude.com/docs/en/quickstart.md)** - Быстрое начало работы
+- **[Setup Guide](https://code.claude.com/docs/en/setup.md)** - Установка, аутентификация и настройка
+- **[CLI Reference](https://code.claude.com/docs/en/cli-reference.md)** - Полный справочник командной строки
+
+### ⚙️ Конфигурация и настройки
+
+- **[Claude Code Settings](./docs/Claude-Code-settings.md)** - **🔥 Детальное руководство по настройкам**
+- **[Settings Configuration](https://code.claude.com/docs/en/settings.md)** - Глобальные и проектные настройки
+- **[Model Configuration](https://code.claude.com/docs/en/model-config.md)** - Конфигурация моделей и алиасы
+- **[Output Styles](https://code.claude.com/docs/en/output-styles.md)** - Адаптация под различные сценарии использования
+
+### 🛠️ Работа и взаимодействие
+
+- **[Interactive Mode](https://code.claude.com/docs/en/interactive-mode.md)** - Горячие клавиши и интерактивные функции
+- **[Common Workflows](https://code.claude.com/docs/en/common-workflows.md)** - Типовые рабочие процессы
+- **[Slash Commands](https://code.claude.com/docs/en/slash-commands.md)** - Управление поведением через slash команды
+- **[Memory Management](https://code.claude.com/docs/en/memory.md)** - Управление памятью между сессиями
+
+### 🔌 Интеграции и плагины
+
+- **[Plugins System](https://code.claude.com/docs/en/plugins.md)** - Расширение возможностей через плагины
+- **[Plugins Reference](https://code.claude.com/docs/en/plugins-reference.md)** - Технический справочник по плагинам
+- **[MCP Integration](https://code.claude.com/docs/en/mcp.md)** - Подключение инструментов через Model Context Protocol
+- **[Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces.md)** - Создание и управление маркетплейсами
+
+### 🏢 Enterprise и корпоративные функции
+
+- **[IAM Configuration](https://code.claude.com/docs/en/iam.md)** - Аутентификация и управление доступом
+- **[Analytics](https://code.claude.com/docs/en/analytics.md)** - Метрики использования и продуктивности
+- **[Enterprise Network Config](https://code.claude.com/docs/en/network-config.md)** - Настройка для корпоративных сред
+- **[Legal & Compliance](https://code.claude.com/docs/en/legal-and-compliance.md)** - Правовые вопросы и сертификация
+
+### 🌐 Облачные платформы и провайдеры
+
+- **[Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock.md)** - Настройка через AWS Bedrock
+- **[Google Vertex AI](https://code.claude.com/docs/en/google-vertex-ai.md)** - Интеграция с Google Cloud
+- **[Microsoft Foundry](https://code.claude.com/docs/en/microsoft-foundry.md)** - Настройка через Microsoft Foundry
+- **[LLM Gateway](https://code.claude.com/docs/en/llm-gateway.md)** - Работа с LLM шлюзами
+
+### 🖥️ IDE и рабочие среды
+
+- **[VS Code Extension](https://code.claude.com/docs/en/vs-code.md)** - Расширение для Visual Studio Code
+- **[JetBrains IDEs](https://code.claude.com/docs/en/jetbrains.md)** - Интеграция с IntelliJ, PyCharm, WebStorm
+- **[Desktop App](https://code.claude.com/docs/en/desktop.md)** - Настольное приложение Claude Code
+- **[Web Version](https://code.claude.com/docs/en/claude-code-on-the-web.md)** - Облачная версия
+
+### 🔄 CI/CD и автоматизация
+
+- **[GitHub Actions](https://code.claude.com/docs/en/github-actions.md)** - Интеграция с GitHub Actions
+- **[GitLab CI/CD](https://code.claude.com/docs/en/gitlab-ci-cd.md)** - Интеграция с GitLab
+- **[Development Containers](https://code.claude.com/docs/en/devcontainer.md)** - Контейнеры для разработки
+- **[Headless Mode](https://code.claude.com/docs/en/headless.md)** - Программное использование без UI
+
+### 🧩 Продвинутые функции
+
+- **[Checkpointing](https://code.claude.com/docs/en/checkpointing.md)** - Отслеживание и откат изменений
+- **[Sandboxing](https://code.claude.com/docs/en/sandboxing.md)** - Изолированное выполнение команд
+- **[Subagents](https://code.claude.com/docs/en/sub-agents.md)** - Специализированные AI субагенты
+- **[Agent Skills](https://code.claude.com/docs/en/skills.md)** - Создание и управление навыками
+- **[Hooks System](https://code.claude.com/docs/en/hooks.md)** - Кастомные команды и хуки
+- **[Status Line](https://code.claude.com/docs/en/statusline.md)** - Кастомная строка состояния
+
+### 📊 Мониторинг и оптимизация
+
+- **[Cost Management](https://code.claude.com/docs/en/costs.md)** - Управление токенами и затратами
+- **[Monitoring & OpenTelemetry](https://code.claude.com/docs/en/monitoring-usage.md)** - Мониторинг производительности
+- **[Data Usage Policies](https://code.claude.com/docs/en/data-usage.md)** - Политики использования данных
+- **[Terminal Optimization](https://code.claude.com/docs/en/terminal-config.md)** - Оптимизация терминала
+
+### 🔧 Инструменты и отладка
+
+- **[Troubleshooting](https://code.claude.com/docs/en/troubleshooting.md)** - Решение проблем
+- **[Security Guide](https://code.claude.com/docs/en/security.md)** - Безопасность и лучшие практики
+- **[SDK Migration Guide](https://code.claude.com/docs/en/sdk/migration-guide.md)** - Миграция на Claude Agent SDK
+- **[Third-party Integrations](https://code.claude.com/docs/en/third-party-integrations.md)** - Обзор интеграций
+
+### 📱 Коммуникации и коллаборация
+
+- **[Slack Integration](https://code.claude.com/docs/en/slack.md)** - Делегирование задач из Slack
+- **[Hooks Guide](https://code.claude.com/docs/en/hooks-guide.md)** - Расширение поведения через shell команды
+
+---
+
+**💡 Навигационная подсказка:** Используйте **[./docs/Claude-Code-Docs.md](./docs/Claude-Code-Docs.md)** для быстрого доступа ко всем ссылкам в одном месте
+
+---
+
 ## 📋 Required Reading (Study Every Session)
 
 ### 🚨 CRITICAL DOCUMENTS

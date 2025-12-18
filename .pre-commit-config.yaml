@@ -36,4 +36,4 @@ default_language_version:
 
 # Глобальная конфигурация
 fail_fast: false
-default_stages: [commit]
+default_stages: [pre-commit]
