@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Установка Claude Code в GLM контейнер
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "🔧 Установка Claude Code в GLM контейнер..."
+
+# Пересборка образа с Claude Code
+echo "🔄 Пересборка образа с Claude Code..."
+TEMP_BUILD_DIR=$(mktemp -d)
+
+# Создание нового Dockerfile с Claude Code
+cat > "$TEMP_BUILD_DIR/Dockerfile" << 'EOF'
+FROM glm-zai
+
+USER root
+
+# Установка Node.js и Claude Code
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get update && apt-get install -y nodejs && \
+    npm install -g @anthropic-ai/claude-code && \
+    ln -sf /usr/local/bin/claude /usr/bin/claude && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Возврат к aiuser
+USER aiuser
+
+# Настройка конфигурации Claude
+RUN mkdir -p /home/aiuser/.config/claude
+
+CMD ["bash"]
+EOF
+
+# Сборка обновленного образа
+docker build -t glm-zai-claude "$TEMP_BUILD_DIR"
+
+# Очистка
+rm -rf "$TEMP_BUILD_DIR"
+
+echo "✅ Создан новый образ: glm-zai-claude"
+echo "🚀 Используйте: ./claude-glm.sh"

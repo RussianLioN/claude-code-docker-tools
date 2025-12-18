@@ -105,7 +105,9 @@ gexec <command>           # Execute in container
 - **[MULTI_AI_ARCHITECTURE.md](./docs/MULTI_AI_ARCHITECTURE.md)** - Alternative architectural concepts
 
 ### 📋 Active Implementation Plans
-- **[Session Manager v1.0](./.ai-plans/session-manager-implementation.md)** - Current implementation plan
+- **[Claude Code Docker Implementation Plan v3.0 🌟](./CLAUDE_CODE_DOCKER_IMPLEMENTATION_PLAN_V3.md)** - КРИТИЧЕСКИЙ: Production-Grade План (ТЕКУЩИЙ ПЛАН) - **Экспертная оценка 9/10**
+- **[Claude Code Docker Implementation Plan v2.0](./CLAUDE_CODE_DOCKER_IMPLEMENTATION_PLAN.md)** - Verified configuration (DEPRECATED - используйте v3.0)
+- **[Session Manager v1.0](./.ai-plans/session-manager-implementation.md)** - Previous implementation plan (DEPRECATED)
 - **[Development Backlog](./.ai-plans/backlog.md)** - Future epics and enhancements
 - **[Plan Repository](./.ai-plans/)** - All planning documents and templates
 

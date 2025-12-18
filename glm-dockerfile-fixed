@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+RUN pip install --no-cache-dir requests && \
+    useradd -m -s /bin/bash aiuser
+
+USER aiuser
+WORKDIR /home/aiuser
+
+# Создаем скрипт проверки API
+COPY check_api.py .
+
+CMD ["python3", "check_api.py"]

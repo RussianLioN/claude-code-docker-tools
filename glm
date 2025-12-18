@@ -1,0 +1,6 @@
+#!/bin/bash
+# GLM - Claude Code with z.ai GLM-4.6 integration
+# Удобный алиас для запуска из любой директории
+
+# Запускаем универсальный скрипт
+exec "/Users/s060874gmail.com/coding/projects/claude-code-docker-tools/claude-universal.sh" "$@"

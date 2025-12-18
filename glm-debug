@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /Users/s060874gmail.com/coding/projects/claude-code-docker-tools/claude-universal-debug.sh "$@"
